@@ -1,0 +1,21 @@
+# Node
+node_modules/
+.pnpm-store/
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+.next/
+expo-build/
+
+# Logs
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
