@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ReduxProvider from "@/store/ReduxProvider";
+import SidePanel from "./_components/SidePanel/SidePanel";
+import Security from "./Security";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "EquityOS",
+  title: {
+    default: "EquityOS",
+    template: "%s | EquityOS",
+  },
+
   description: "Systems over goals",
 };
 
@@ -25,9 +32,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex`}
       >
-        {children}
+        <ReduxProvider>
+          <Security>
+            <SidePanel /> {children}
+          </Security>
+        </ReduxProvider>
       </body>
     </html>
   );

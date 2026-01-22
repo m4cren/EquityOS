@@ -4,17 +4,6 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/utils/supabase/server";
 
-export async function signout() {
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    console.log(error);
-    redirect("/error");
-  }
-
-  redirect("/auth/logout");
-}
-
 export async function signInWithGoogle() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -32,5 +21,20 @@ export async function signInWithGoogle() {
     redirect("/error");
   }
 
+  redirect(data.url);
+}
+export async function signInWithFacebook() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "facebook",
+  });
+
+  if (error) {
+    console.error(error);
+    redirect("/error");
+  }
+
+  // Supabase returns the OAuth redirect URL
   redirect(data.url);
 }

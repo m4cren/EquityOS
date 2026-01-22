@@ -1,8 +1,23 @@
-import GoogleAuthButton from "./GoogleAuthButton";
+"use client";
+import { signInWithFacebook, signInWithGoogle } from "@/lib/auth-actions";
+import { FaFacebook, FaGoogle } from "react-icons/fa";
+import AuthButton from "./AuthButton";
 
+const authProviders = [
+  {
+    icon: FaGoogle,
+    authFunction: signInWithGoogle,
+    label: "Google",
+  },
+  {
+    icon: FaFacebook,
+    authFunction: signInWithFacebook,
+    label: "Facebook",
+  },
+];
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+    <main className="flex min-h-screen w-full items-center justify-center bg-[#0a0a0a]">
       <div className="w-full max-w-sm rounded-2xl bg-[#262626] p-8 shadow-lg">
         {/* Logo / Brand */}
         <div className="mb-6 text-center">
@@ -16,7 +31,14 @@ export default function LoginPage() {
 
         {/* Auth */}
         <div className="space-y-4">
-          <GoogleAuthButton />
+          {authProviders.map(({ authFunction, icon, label }) => (
+            <AuthButton
+              key={label}
+              authFunction={authFunction}
+              icon={icon}
+              label={label}
+            />
+          ))}
         </div>
 
         {/* Footer */}
