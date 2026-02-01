@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import sidePanelReducer from "./sidePanel/sidePanelSlice";
-import taskReducer from "./taskSlice/taskSlice";
+import financeAccountReducer from "./financeAccountSlice/slice";
+import taskReducer from "./taskSlice/slice";
 export const store = configureStore({
   reducer: {
     sidePanel: sidePanelReducer,
     tasks: taskReducer,
+    financeAccount: financeAccountReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

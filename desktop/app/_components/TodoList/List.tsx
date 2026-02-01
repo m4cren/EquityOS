@@ -1,9 +1,8 @@
-import { diffStatus } from "@/lib/timeDiff";
 import { TaskTypeChoice } from "@/store/taskSlice/types";
-import { AlertCircle, Check } from "lucide-react";
-import { taskCategoryBg } from "./TodoList";
 import classNames from "classnames";
-import { useEffect, useState } from "react";
+import { AlertCircle, Check } from "lucide-react";
+import { useState } from "react";
+import { taskCategoryBg } from "./TodoList";
 
 interface Props {
   task_id: string;
@@ -28,7 +27,7 @@ const List = ({
   return (
     <li
       className={classNames(
-        "relative bg-[#202020] rounded-lg overflow-hidden p-2.5 min-h-18 flex flex-col gap-2",
+        "relative bg-card rounded-lg overflow-hidden p-2.5 min-h-18 flex flex-col gap-2",
         {
           "finish-task-animation": isFinished,
         }
@@ -38,8 +37,8 @@ const List = ({
         <p className="text-base font-semibold">{title}</p>
         <span
           className={`${
-            type ? `${taskCategoryBg[type as TaskTypeChoice].bg}/20` : ""
-          } py-0.5 px-2 font-medium text-[0.65rem] rounded-md w-fit`}
+            type ? `${taskCategoryBg[type as TaskTypeChoice].bgX}` : ""
+          } py-0.5 px-2 font-medium  text-[0.65rem] rounded-md w-fit`}
         >
           {type}
         </span>
@@ -48,7 +47,7 @@ const List = ({
       <div className="flex justify-between gap-2">
         <div className="flex flex-col gap-1">
           {time_diff === "Overdue" ? (
-            <p className="text-[0.65rem] text-red-500 flex items-center gap-1">
+            <p className="text-[0.65rem] text-red-500 bg-red-500/15 px-1 py-0.5 rounded-md flex items-center gap-1">
               Overdue
               <AlertCircle size={12} />
             </p>
@@ -69,7 +68,7 @@ const List = ({
       <div
         style={{ width: `${100 - pct}%` }}
         className={classNames(
-          "h-1 absolute bottom-0 left-0  transition-all opacity-30",
+          "h-0.75 absolute bottom-0 left-0  transition-all opacity-20",
           pct > 75 ? "bg-red-500" : pct > 40 ? "bg-yellow-500" : "bg-green-500"
         )}
       ></div>

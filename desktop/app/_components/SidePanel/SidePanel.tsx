@@ -36,7 +36,7 @@ const menuLinks: { icon: LucideIcon; label: string; path: string }[] = [
   {
     icon: Settings,
     label: "Settings",
-    path: "/settings",
+    path: "/settings/profile",
   },
 ];
 

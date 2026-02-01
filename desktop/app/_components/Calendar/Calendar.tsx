@@ -11,7 +11,7 @@ const Calendar = ({ tasks }: Props) => {
   const { days, monthLabel, prevMonth, nextMonth } = useCalendar();
 
   return (
-    <div className="w-full max-w-[30vw]  mx-auto bg-card shadow-md rounded-[0.7vw] p-[1.1vw]">
+    <div className="w-full max-w-[30vw]  mx-auto bg-transparent shadow-md rounded-[0.7vw] p-[1.1vw]">
       <header className="flex justify-between items-center mb-[1.75vw]">
         <button
           onClick={prevMonth}

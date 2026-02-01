@@ -9,8 +9,8 @@ const Security = ({ children }: PropsWithChildren) => {
   const isExist = useSecurity();
 
   return (
-    <div>
-      <SecurityOverlay pin_mode={!isExist ? "NEW" : "SESSION_CHECK"} />
+    <div className="w-full">
+      {/* <SecurityOverlay pin_mode={!isExist ? "NEW" : "SESSION_CHECK"} /> */}
       {children}
     </div>
   );

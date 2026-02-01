@@ -29,15 +29,15 @@ import {
 
 export const taskCategoryBg: Record<
   TaskTypeChoice,
-  { bg: string; icon: LucideIcon }
+  { bg: string; bgX: string; icon: LucideIcon }
 > = {
-  Study: { bg: "bg-indigo-500", icon: School },
-  Personal: { bg: "bg-rose-500", icon: PersonStanding },
-  Work: { bg: "bg-amber-500", icon: File },
-  Home: { bg: "bg-emerald-500", icon: House },
-  Errands: { bg: "bg-violet-500", icon: Wallet },
-  Appointment: { bg: "bg-blue-500", icon: Users },
-  Others: { bg: "bg-gray-400", icon: FileQuestion },
+  Study: { bg: "bg-indigo-500", bgX: "bg-indigo-500/20", icon: School },
+  Personal: { bg: "bg-rose-500", bgX: "bg-rose-500/20", icon: PersonStanding },
+  Work: { bg: "bg-amber-500", bgX: "bg-amber-500/20", icon: File },
+  Home: { bg: "bg-emerald-500", bgX: "bg-emerald-500/20", icon: House },
+  Errands: { bg: "bg-violet-500", bgX: "bg-violet-500/20", icon: Wallet },
+  Appointment: { bg: "bg-blue-500", bgX: "bg-blue-500/20", icon: Users },
+  Others: { bg: "bg-gray-400", bgX: "bg-gray-400/20", icon: FileQuestion },
 };
 
 interface Props {

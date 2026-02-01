@@ -14,8 +14,8 @@ const DayCell: React.FC<{ day: Day; tasks: TaskTypes[] }> = ({
     "p-2.5  text-center relative rounded-[0.5vw] cursor-pointer text-[1.1vw]",
     day.isCurrentMonth ? "text-[#d4d4d4]" : "text-[#d4d4d440]",
     day.isToday
-      ? "bg-[#2c2c2c] font-semibold text-card"
-      : "hover:bg-[#262626] hover:text-card",
+      ? "bg-[#202020] font-semibold text-white"
+      : "hover:bg-[#262626] hover:text-white",
   ].join(" ");
   const typeCounts = tasks.reduce<Record<string, number>>((acc, t) => {
     acc[t.type] = (acc[t.type] || 0) + 1;

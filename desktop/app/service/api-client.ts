@@ -28,9 +28,5 @@ export async function api<
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (!res.ok) {
-    throw new Error(await res.text());
-  }
-
   return (await res.json()) as TResponse;
 }

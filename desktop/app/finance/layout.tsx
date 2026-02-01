@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Finance",
@@ -10,5 +11,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div>{children}</div>;
+  return (
+    <main className="flex flex-col  w-screen h-fit min-h-screen pb-[20vw]">
+      <Image
+        src={"/images/banner.gif"}
+        width={1920}
+        height={1080}
+        alt="banner"
+        unoptimized
+        className="w-full h-[15vw] object-cover object-center"
+      />
+
+      <section className="flex flex-col gap-[2vw] px-[8vw]">{children}</section>
+    </main>
+  );
 }

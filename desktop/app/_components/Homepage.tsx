@@ -10,7 +10,7 @@ const Homepage = () => {
     useTask();
   return (
     <main className="relative flex flex-col w-full justify-between h-screen p-10">
-      <div className="flex  justify-between w-full ">
+      <div className="flex  justify-between w-full gap-10 ">
         <Clock />
         <TodoList
           addTask={addTask}
@@ -20,7 +20,7 @@ const Homepage = () => {
           is_pending={is_pending}
           tasks={tasks}
         />
-        <div className="w-90">
+        <div className="w-100">
           <Calendar tasks={tasks} />
         </div>
       </div>
