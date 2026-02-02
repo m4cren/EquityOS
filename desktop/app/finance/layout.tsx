@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import RenderRecordFinance from "./RenderRecordFinance";
 
 export const metadata: Metadata = {
   title: "Finance",
@@ -21,6 +22,7 @@ export default function RootLayout({
         unoptimized
         className="w-full h-[15vw] object-cover object-center"
       />
+      <RenderRecordFinance />
 
       <section className="flex flex-col gap-[2vw] px-[8vw]">{children}</section>
     </main>

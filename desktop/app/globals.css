@@ -71,3 +71,40 @@ body {
     scale: 0.85;
   }
 }
+.menuToggleAnimation {
+  animation: menuToggle 0.2s forwards ease-in;
+}
+
+.recordExpenseToggleAnimation {
+  animation: recordExpense 0.2s forwards ease-out;
+}
+.recordIncomeToggleAnimation {
+  animation: recordIncome 0.2s forwards ease-out;
+}
+
+@keyframes recordExpense {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes recordIncome {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+@keyframes menuToggle {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 100;
+  }
+}
