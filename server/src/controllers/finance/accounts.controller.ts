@@ -1,5 +1,5 @@
 import type { Response, Request } from "express";
-import { supabaseFromReq } from "../lib/supabaseFromReq.js";
+import { supabaseFromReq } from "../../lib/supabaseFromReq.js";
 
 export const fetchAccounts = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
@@ -36,7 +36,7 @@ export const deleteAccount = async (req: Request, res: Response) => {
     .from("finance_account")
     .delete()
     .eq("id", body.id)
-    .eq("name", body.name)
+    .eq("label", body.label)
     .select()
     .single();
 

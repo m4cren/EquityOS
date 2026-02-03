@@ -16,12 +16,29 @@ interface Props {
   setSelectedIcon: React.Dispatch<
     React.SetStateAction<ExpenseCategoryIconTypes | null>
   >;
-  currentData?: { icon: string; label: string; alloc_per_month: number };
+  currentData?: {
+    icon: string;
+    label: string;
+    alloc_per_month: number;
+  };
   expenseCategory: ExpenseCategoryTypes[];
   selectedIcon: ExpenseCategoryIconTypes | null;
   setIsAddNewCategory?: React.Dispatch<React.SetStateAction<boolean>>;
   setItemToEdit?: React.Dispatch<React.SetStateAction<string | null>>;
   id?: string;
+  handleAddExpenseCategory: (
+    label: string,
+    icon: ExpenseCategoryIconTypes,
+    alloc_per_month: number
+  ) => void;
+  handleEditExpenseCategory: (
+    id: string,
+    newLabel: string,
+    newIcon: ExpenseCategoryIconTypes,
+    newAlloc_per_month: number
+  ) => void;
+  handleDeleteExpenseCategory: (id: string, label: string) => void;
+  action: "ADD" | "EDIT";
 }
 
 const NewExpenseCategoryForm = ({
@@ -32,6 +49,10 @@ const NewExpenseCategoryForm = ({
   setSelectedIcon,
   setIsAddNewCategory,
   expenseCategory,
+  handleAddExpenseCategory,
+  action,
+  handleEditExpenseCategory,
+  handleDeleteExpenseCategory,
 }: Props) => {
   const { register, handleSubmit } = useForm<ExpenseCategoryTypes>();
 
@@ -76,21 +97,21 @@ const NewExpenseCategoryForm = ({
       return;
     }
 
-    // Demo only – no backend
-    console.log("Saved category (demo):", {
-      ...data,
-      icon: selectedIcon,
-    });
-
+    if (action === "ADD") {
+      handleAddExpenseCategory(data.label, selectedIcon, data.alloc_per_month);
+    } else if (action === "EDIT") {
+      handleEditExpenseCategory(
+        id!,
+        data.label,
+        selectedIcon,
+        data.alloc_per_month
+      );
+    }
     setSelectedIcon(null);
     setErrMsg(null);
 
     if (setIsAddNewCategory) setIsAddNewCategory(false);
     if (setItemToEdit) setItemToEdit(null);
-  };
-
-  const handleDelete = () => {
-    alert("This is a demo. Delete is disabled.");
   };
 
   return (
@@ -111,19 +132,23 @@ const NewExpenseCategoryForm = ({
               setIsAddNewCategory ? "Category label" : currentData?.label
             }
           />
-          <input
-            type="number"
-            required
-            {...register("alloc_per_month")}
-            autoComplete="off"
-            min={10}
-            className="text-[0.8vw] font-normal outline-none w-[9vw]"
-            placeholder={
-              setIsAddNewCategory
-                ? "Budget per month"
-                : String(currentData?.alloc_per_month)
-            }
-          />
+          <div className="flex items-center gap-1 text-[0.75vw]">
+            <label htmlFor="month">Monthly:</label>
+            <input
+              id="month"
+              type="number"
+              required
+              {...register("alloc_per_month")}
+              autoComplete="off"
+              min={10}
+              className="text-[0.8vw] font-normal outline-none w-[9vw]"
+              placeholder={
+                setIsAddNewCategory
+                  ? "Budget per month"
+                  : String(currentData?.alloc_per_month)
+              }
+            />
+          </div>
         </div>
 
         <IconSelection
@@ -154,8 +179,8 @@ const NewExpenseCategoryForm = ({
 
         {currentData && (
           <ConfirmationModal
-            label="Demo mode"
-            action={handleDelete}
+            label="Delete this expense category?"
+            action={() => handleDeleteExpenseCategory(id!, currentData.label)}
             sub_label={
               <>
                 <CurrentIcon size={14} />

@@ -1,46 +1,26 @@
 "use client";
 
-import { expenseCategoryIconMap, ExpenseCategoryIconTypes } from "@/lib/types";
+import {
+  expenseCategoryIconMap,
+  ExpenseCategoryIconTypes,
+  ExpenseCategoryTypes,
+} from "@/lib/types";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import NewExpenseCategoryForm from "./NewExpenseCategoryForm";
 import Card from "./Card";
-
-// 🔹 STATIC DUMMY CATEGORIES
-const dummyCategories = [
-  {
-    id: "1",
-    label: "Food",
-    icon: "Food",
-    alloc_per_month: 5000,
-  },
-  {
-    id: "2",
-    label: "Transport",
-    icon: "Transportation",
-    alloc_per_month: 3000,
-  },
-  {
-    id: "3",
-    label: "Bills",
-    icon: "Subscription",
-    alloc_per_month: 6000,
-  },
-  {
-    id: "4",
-    label: "Entertainment",
-    icon: "Hobbies",
-    alloc_per_month: 2500,
-  },
-] satisfies {
-  id: string;
-  label: string;
-  icon: ExpenseCategoryIconTypes;
-  alloc_per_month: number;
-}[];
+import { useExpenseCategory } from "@/store/ExpenseCategorySlice/useExpenseCategory";
+import SkeletonCard from "../../_components/Accounts/SkeletonCard";
 
 const ExpenseCategory = () => {
-  const [expenseCategory, setExpenseCategory] = useState(dummyCategories);
+  const {
+    expense_category,
+    dispatch,
+    addExpenseCategory,
+    editExpenseCategory,
+    deleteExpenseCategory,
+    is_pending,
+  } = useExpenseCategory();
 
   const [isAddNewCategory, setIsAddNewCategory] = useState<boolean>(false);
   const [itemToEdit, setItemToEdit] = useState<string | null>(null);
@@ -48,50 +28,90 @@ const ExpenseCategory = () => {
   const [selectedIcon, setSelectedIcon] =
     useState<ExpenseCategoryIconTypes | null>(null);
 
+  const handleAddExpenseCategory = (
+    label: string,
+    icon: ExpenseCategoryIconTypes,
+    alloc_per_month: number
+  ) => {
+    dispatch(addExpenseCategory({ label, icon, alloc_per_month }));
+  };
+
+  const handleEditExpenseCategory = (
+    id: string,
+    newLabel: string,
+    newIcon: ExpenseCategoryIconTypes,
+    newAlloc_per_month: number
+  ) => {
+    dispatch(
+      editExpenseCategory({
+        id,
+        newLabel,
+        newIcon,
+        newAlloc_per_month,
+      })
+    );
+  };
+
+  const handleDeleteExpenseCategory = (id: string, label: string) => {
+    dispatch(deleteExpenseCategory({ id, label }));
+  };
+
   return (
     <div className="flex flex-col gap-[1vw] w-[20vw] h-fit border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <p className="text-[0.9vw] font-medium opacity-50">Expense Category</p>
       <hr className="text-card border-2" />
 
       <ul className="flex flex-col gap-[0.8vw]">
-        {expenseCategory.map(({ alloc_per_month, icon, label, id }) => {
-          const IconComponent =
-            expenseCategoryIconMap[icon as ExpenseCategoryIconTypes];
+        {!is_pending ? (
+          expense_category.map(({ alloc_per_month, icon, label, id }) => {
+            const IconComponent =
+              expenseCategoryIconMap[icon as ExpenseCategoryIconTypes];
 
-          if (id && itemToEdit !== id) {
+            if (id && itemToEdit !== id) {
+              return (
+                <Card
+                  key={id}
+                  id={id}
+                  setItemToEdit={setItemToEdit}
+                  alloc_per_month={Number(alloc_per_month)}
+                  label={label}
+                >
+                  <IconComponent />
+                </Card>
+              );
+            }
+
             return (
-              <Card
+              <NewExpenseCategoryForm
+                handleDeleteExpenseCategory={handleDeleteExpenseCategory}
+                handleEditExpenseCategory={handleEditExpenseCategory}
+                action="EDIT"
+                handleAddExpenseCategory={handleAddExpenseCategory}
                 key={id}
-                id={id}
+                expenseCategory={expense_category}
+                selectedIcon={selectedIcon}
                 setItemToEdit={setItemToEdit}
-                alloc_per_month={Number(alloc_per_month)}
-                label={label}
-              >
-                <IconComponent />
-              </Card>
+                currentData={{
+                  icon,
+                  label,
+                  alloc_per_month,
+                }}
+                setSelectedIcon={setSelectedIcon}
+                id={id}
+              />
             );
-          }
-
-          return (
-            <NewExpenseCategoryForm
-              key={id}
-              expenseCategory={expenseCategory}
-              selectedIcon={selectedIcon}
-              setItemToEdit={setItemToEdit}
-              currentData={{
-                icon,
-                label,
-                alloc_per_month,
-              }}
-              setSelectedIcon={setSelectedIcon}
-              id={id}
-            />
-          );
-        })}
+          })
+        ) : (
+          <SkeletonCard />
+        )}
 
         {isAddNewCategory ? (
           <NewExpenseCategoryForm
-            expenseCategory={expenseCategory}
+            handleDeleteExpenseCategory={handleDeleteExpenseCategory}
+            handleEditExpenseCategory={handleEditExpenseCategory}
+            action="ADD"
+            handleAddExpenseCategory={handleAddExpenseCategory}
+            expenseCategory={expense_category}
             selectedIcon={selectedIcon}
             setIsAddNewCategory={setIsAddNewCategory}
             setSelectedIcon={setSelectedIcon}
