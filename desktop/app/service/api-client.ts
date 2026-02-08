@@ -1,7 +1,14 @@
 import { supabase } from "@/utils/supabase/client";
 
 const BASE_URL = "http://localhost:3001";
-type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[]
+  | Date;
 
 interface ApiProps<TBody> {
   endpoint: string;

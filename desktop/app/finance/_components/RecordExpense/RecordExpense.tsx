@@ -20,7 +20,7 @@ const RecordExpense = ({ handleClose }: Props) => {
           <XIcon size={18} />
         </button>
         <h2 className="text-[2.5vw] font-bold">Record Expense</h2>
-        <ExpenseForm />
+        <ExpenseForm handleClose={handleClose} />
       </div>
     </div>
   );

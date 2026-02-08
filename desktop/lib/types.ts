@@ -108,12 +108,14 @@ export type ExpenseTypes = {
   id?: string;
   account: string;
   acc_icon: AccountIconTypes;
+  acc_id: string;
   label: string;
   amount: number;
   category: string;
   category_icon: ExpenseCategoryIconTypes;
+  category_id: string;
   date_str: string;
-  created_at: Date;
+  created_at?: Date;
 };
 export type ExpenseStateTypes = {
   expense: ExpenseTypes[];
@@ -122,6 +124,7 @@ export type ExpenseStateTypes = {
 };
 
 export type TransferTypes = {
+  created_at: Date;
   id?: string;
   amount: number;
   from_acc: string;
@@ -129,7 +132,6 @@ export type TransferTypes = {
   to_acc_icon: AccountIconTypes;
   to_acc: string;
   date_str: string;
-  created_at: Date;
 };
 
 export type TransferStateTypes = {

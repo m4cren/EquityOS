@@ -1,6 +1,7 @@
 "use client";
 
 import { CustomTooltip } from "@/app/_components/CustomToolTip";
+import { useExpense } from "@/store/RecordExpense/useExpense";
 import { LayoutList, ShoppingBag, UserIcon } from "lucide-react";
 import { useState } from "react";
 import {
@@ -13,18 +14,10 @@ import {
   YAxis,
 } from "recharts";
 
-// 🔹 STATIC DUMMY EXPENSE DATA
-const expenses = [
-  { account: "Cash", category: "Food", amount: 3200 },
-  { account: "Cash", category: "Transport", amount: 1200 },
-  { account: "Savings", category: "Bills", amount: 4500 },
-  { account: "Credit", category: "Shopping", amount: 2600 },
-  { account: "Credit", category: "Food", amount: 1800 },
-  { account: "Cash", category: "Entertainment", amount: 1200 },
-];
-
 const Chart = () => {
   const [filter, setFilter] = useState<"account" | "category">("category");
+
+  const { expense: expenses } = useExpense();
 
   const reduced = expenses.reduce((acc, curr) => {
     const key = curr[filter];

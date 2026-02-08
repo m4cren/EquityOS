@@ -9,7 +9,7 @@ interface Props {
   currentPage: number;
   name: string;
 }
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 8;
 const Pagination = ({ currentPage, items, name }: Props) => {
   const pages = Math.ceil(items / PAGE_SIZE);
 
@@ -34,17 +34,9 @@ const Pagination = ({ currentPage, items, name }: Props) => {
         </button>
 
         <div className="flex items-center gap-[0.4vw]">
-          {Array.from({ length: pages }).map((_, key) => (
-            <p
-              key={key}
-              className={classNames(
-                "w-[0.6vw] h-[0.6vw] bg-card rounded-full",
-                {
-                  "bg-[#404040]!": currentPage === key,
-                }
-              )}
-            />
-          ))}
+          <p className="text-xs opacity-75 font-medium">
+            Page {currentPage + 1} of {pages}
+          </p>
         </div>
         <button
           onClick={() => handleChangePage(currentPage + 1)}

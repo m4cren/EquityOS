@@ -4,6 +4,7 @@ import financeAccountReducer from "./financeAccountSlice/slice";
 import taskReducer from "./taskSlice/slice";
 import recordFinanceReducer from "./recordFinanceSlice/slice";
 import expenseCategoryReducer from "./ExpenseCategorySlice/slice";
+import expenseReducer from "./RecordExpense/slice";
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     financeAccount: financeAccountReducer,
     recordFinance: recordFinanceReducer,
     expenseCategory: expenseCategoryReducer,
+    expense: expenseReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
