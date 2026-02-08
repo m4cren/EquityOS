@@ -13,6 +13,10 @@ import {
   editExpenseCategory,
   fetchExpenseCategory,
 } from "../controllers/finance/expense_category.controller.js";
+import {
+  fetchExpense,
+  recordExpense,
+} from "../controllers/finance/expense.controller.js";
 
 const router: Router = Router();
 
@@ -25,4 +29,7 @@ router.get("/fetch-expense-category", requireAuth, fetchExpenseCategory);
 router.post("/add-expense-category", requireAuth, addNewExpenseCategory);
 router.patch("/edit-expense-category", requireAuth, editExpenseCategory);
 router.delete("/delete-expense-category", requireAuth, deleteExpenseCategory);
+
+router.post("/record-expense", requireAuth, recordExpense);
+router.get("/fetch-expense", requireAuth, fetchExpense);
 export default router;
