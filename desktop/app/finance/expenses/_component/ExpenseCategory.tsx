@@ -11,6 +11,7 @@ import NewExpenseCategoryForm from "./NewExpenseCategoryForm";
 import Card from "./Card";
 import { useExpenseCategory } from "@/store/ExpenseCategorySlice/useExpenseCategory";
 import SkeletonCard from "../../_components/Accounts/SkeletonCard";
+import { useExpense } from "@/store/RecordExpense/useExpense";
 
 const ExpenseCategory = () => {
   const {
@@ -21,6 +22,10 @@ const ExpenseCategory = () => {
     deleteExpenseCategory,
     is_pending,
   } = useExpenseCategory();
+
+  const { expense } = useExpense();
+
+  console.log(expense);
 
   const [isAddNewCategory, setIsAddNewCategory] = useState<boolean>(false);
   const [itemToEdit, setItemToEdit] = useState<string | null>(null);
@@ -55,7 +60,9 @@ const ExpenseCategory = () => {
   const handleDeleteExpenseCategory = (id: string, label: string) => {
     dispatch(deleteExpenseCategory({ id, label }));
   };
-
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
   return (
     <div className="flex flex-col gap-[1vw] w-[20vw] h-fit border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <p className="text-[0.9vw] font-medium opacity-50">Expense Category</p>
@@ -67,9 +74,34 @@ const ExpenseCategory = () => {
             const IconComponent =
               expenseCategoryIconMap[icon as ExpenseCategoryIconTypes];
 
+            const monthlyExpense = expense
+              ?.filter((item) => {
+                const expenseDate = new Date(item.date_str);
+
+                return (
+                  item.category === label &&
+                  expenseDate.getUTCFullYear() === currentYear &&
+                  expenseDate.getUTCMonth() === currentMonth
+                );
+              })
+              .reduce((total, item) => total + Number(item.amount), 0);
+
+            const annualExpense = expense
+              ?.filter((item) => {
+                const expenseDate = new Date(item.date_str);
+
+                return (
+                  item.category === label &&
+                  expenseDate.getUTCFullYear() === currentYear
+                );
+              })
+              .reduce((total, item) => total + Number(item.amount), 0);
+
             if (id && itemToEdit !== id) {
               return (
                 <Card
+                  totalExpenseThisMonth={monthlyExpense}
+                  totalExpenseThisYear={annualExpense}
                   key={id}
                   id={id}
                   setItemToEdit={setItemToEdit}

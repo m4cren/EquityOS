@@ -93,6 +93,7 @@ export type IncomeTypes = {
   amount: number;
   received_in: string;
   acc_icon: AccountIconTypes;
+  acc_id: string;
   date_str: string;
   created_at: Date;
   income_type: IncomeCategoryTypes;
@@ -115,7 +116,7 @@ export type ExpenseTypes = {
   category_icon: ExpenseCategoryIconTypes;
   category_id: string;
   date_str: string;
-  created_at?: Date;
+  created_at: Date;
 };
 export type ExpenseStateTypes = {
   expense: ExpenseTypes[];

@@ -21,10 +21,17 @@ import {
   incomeTypes,
 } from "../../income/_component/IncomeTypes";
 import { useForm } from "react-hook-form";
-
-const IncomeForm = () => {
+import { useIncome } from "@/store/RecordIcome/useIncome";
+interface Props {
+  handleClose: () => {
+    payload: undefined;
+    type: "recordFinance/close";
+  };
+}
+const IncomeForm = ({ handleClose }: Props) => {
   const { register, handleSubmit } = useForm<IncomeTypes>();
   const { accounts } = useFinanceAccount();
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [selectedIncomeType, setSelectedIncomeType] =
     useState<IncomeCategoryTypes | null>(null);
@@ -33,11 +40,12 @@ const IncomeForm = () => {
   const handleChangeAmount = (e: ChangeEvent<HTMLInputElement>) => {
     setAmountInput(Number(e.target.value));
   };
-
+  const { dispatch, recordIncome } = useIncome();
   const accBalance = accounts.find(
     ({ name }) => name === selectedAccount
   )?.balance;
   const onSubmit = (data: IncomeTypes) => {
+    setIsSubmitting(true);
     const dateObj = new Date(data.date_str);
 
     const dateToday = new Date();
@@ -55,16 +63,22 @@ const IncomeForm = () => {
 
     if (selectedAccount) {
       if (selectedIncomeType) {
-        console.log({
-          ...data,
-          date_str: data.date_str ? formFormattedDate : dateTodayFormatted,
-
-          acc_icon:
-            accounts.find(({ name }) => name === selectedAccount)?.icon ||
-            "card",
-          received_in: selectedAccount,
-          income_type: selectedIncomeType,
-        });
+        dispatch(
+          recordIncome({
+            ...data,
+            date_str: data.date_str ? formFormattedDate : dateTodayFormatted,
+            acc_id:
+              accounts.find(({ name }) => name === selectedAccount)?.id || "",
+            acc_icon:
+              accounts.find(({ name }) => name === selectedAccount)?.icon ||
+              "card",
+            received_in: selectedAccount,
+            income_type: selectedIncomeType,
+          })
+        );
+        setTimeout(() => {
+          handleClose();
+        }, 2500);
       } else {
         setErrMsg("Please select type of income");
         setTimeout(() => {
@@ -209,11 +223,18 @@ const IncomeForm = () => {
       </div>
 
       <button
-        type="button"
-        className="cursor-pointer text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center"
+        disabled={isSubmitting}
+        type="submit"
+        className="disabled:opacity-50 disabled:cursor-not-allowed  cursor-pointer text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center"
       >
-        <Plus />
-        Record
+        {!isSubmitting ? (
+          <>
+            <Plus />
+            Record
+          </>
+        ) : (
+          <p>Submitting</p>
+        )}
       </button>
     </form>
   );

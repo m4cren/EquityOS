@@ -21,7 +21,7 @@ const RecordIncome = ({ handleClose }: Props) => {
         <h2 className="text-[2.5vw] font-bold w-[22vw] text-end">
           Record Income
         </h2>
-        <IncomeForm />
+        <IncomeForm handleClose={handleClose} />
       </div>
     </div>
   );

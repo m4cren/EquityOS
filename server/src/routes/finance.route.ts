@@ -17,6 +17,10 @@ import {
   fetchExpense,
   recordExpense,
 } from "../controllers/finance/expense.controller.js";
+import {
+  fetchIncome,
+  recordIncome,
+} from "../controllers/finance/income.controller.js";
 
 const router: Router = Router();
 
@@ -32,4 +36,7 @@ router.delete("/delete-expense-category", requireAuth, deleteExpenseCategory);
 
 router.post("/record-expense", requireAuth, recordExpense);
 router.get("/fetch-expense", requireAuth, fetchExpense);
+
+router.post("/record-income", requireAuth, recordIncome);
+router.get("/fetch-income", requireAuth, fetchIncome);
 export default router;
