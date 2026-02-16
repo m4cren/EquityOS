@@ -5,19 +5,12 @@ import { PieChartIcon } from "lucide-react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { incomeColorTypeMap } from "./IncomeTypes";
 import { CustomTooltip } from "@/app/_components/CustomToolTip";
-
-// 🔹 STATIC DISTRIBUTION
-const incomeOverallDistribution = [
-  { income_type: "Active", amount: 120000 },
-  { income_type: "Business", amount: 45000 },
-  { income_type: "Portfolio", amount: 22000 },
-  { income_type: "Passive", amount: 15000 },
-  { income_type: "Others", amount: 8000 },
-] as { income_type: IncomeCategoryTypes; amount: number }[];
+import { useIncomeSummary } from "@/hooks/useIncomeSummary";
 
 const isBalanceShown = true;
 
 const PieChartComponent = () => {
+  const { incomeOverallDistribution } = useIncomeSummary();
   return (
     <div className="relative flex flex-col gap-[1vw] w-full h-[33vw] border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <div className="flex items-center gap-[0.6vw]">

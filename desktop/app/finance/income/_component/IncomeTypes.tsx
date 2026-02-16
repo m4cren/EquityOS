@@ -1,5 +1,6 @@
 "use client";
 
+import { useIncomeSummary } from "@/hooks/useIncomeSummary";
 import { IncomeCategoryTypes } from "@/lib/types";
 import { BanknoteArrowDownIcon } from "lucide-react";
 import { useState } from "react";
@@ -50,18 +51,8 @@ export const incomeColorTypeMap: Record<IncomeCategoryTypes, string> = {
   Others: "#6B7280",
 };
 
-// 🔹 STATIC DISTRIBUTION
-const incomeOverallDistribution = [
-  { income_type: "Active", amount: 120000 },
-  { income_type: "Business", amount: 45000 },
-  { income_type: "Portfolio", amount: 22000 },
-  { income_type: "Passive", amount: 15000 },
-  { income_type: "Others", amount: 8000 },
-] as { income_type: IncomeCategoryTypes; amount: number }[];
-
-const totalAmount = incomeOverallDistribution.reduce((a, b) => a + b.amount, 0);
-
 const IncomeTypes = () => {
+  const { incomeOverallDistribution, totalAmount } = useIncomeSummary();
   const [hoveredType, setHoveredType] = useState<IncomeCategoryTypes | null>(
     null
   );

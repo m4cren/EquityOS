@@ -77,7 +77,7 @@ const Table = ({ sortedByDate }: { sortedByDate: IncomeTypes[] }) => {
                     style={{
                       backgroundColor: `${incomeColorTypeMap[income_type]}40`,
                     }}
-                    className="px-[1vw] py-[0.2vw] rounded-[0.2vw] font-semibold"
+                    className="px-[1vw] py-[0.2vw] rounded-[0.2vw] font-medium"
                   >
                     {income_type}
                   </span>
