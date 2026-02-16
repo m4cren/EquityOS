@@ -45,7 +45,7 @@ const ExpenseHistory = () => {
         </p>
       )}
 
-      {}
+
     </div>
   );
 };
