@@ -9,12 +9,17 @@ import { useForm } from "react-hook-form";
 import { accountIconMapp } from "../Accounts/Accounts";
 import ErrorMessage from "@/app/_components/ErrorMessage";
 import { useTransfer } from "@/store/RecordTransfer/useTransfer";
-
-const TransferFormStatic = () => {
+interface Props {
+  handleClose: () => {
+    payload: undefined;
+    type: "recordFinance/close";
+  };
+}
+const TransferFormStatic = ({ handleClose }: Props) => {
   const { register, handleSubmit } = useForm<TransferTypes>();
   const [errMsg, setErrMsg] = useState<string | null>(null);
   const { accounts } = useFinanceAccount();
-
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { dispatch, recordTransfer } = useTransfer();
 
   const onSubmit = (data: TransferTypes) => {
@@ -32,6 +37,7 @@ const TransferFormStatic = () => {
       year: "numeric",
     });
     if (selectedAccount.from_acc && selectedAccount.to_acc) {
+      setIsSubmitting(true);
       dispatch(
         recordTransfer({
           ...data,
@@ -45,8 +51,17 @@ const TransferFormStatic = () => {
               ?.icon || "wallet",
           from_acc: selectedAccount.from_acc,
           to_acc: selectedAccount.to_acc,
+          from_acc_id:
+            accounts.find(({ name }) => name === selectedAccount.from_acc)
+              ?.id || "",
+          to_acc_id:
+            accounts.find(({ name }) => name === selectedAccount.to_acc)?.id ||
+            "",
         })
       );
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
     } else {
       setErrMsg("Select an account");
       setTimeout(() => {
@@ -213,11 +228,18 @@ const TransferFormStatic = () => {
       </div>
 
       <button
+        disabled={isSubmitting}
         type="submit"
-        className="cursor-pointer text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center "
+        className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed  text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center "
       >
-        <Plus />
-        Record
+        {!isSubmitting ? (
+          <>
+            <Plus />
+            Record
+          </>
+        ) : (
+          <p>Submitting</p>
+        )}
       </button>
     </form>
   );

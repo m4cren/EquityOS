@@ -84,7 +84,7 @@ const ExpenseFormStatic = ({ handleClose }: Props) => {
       );
       setTimeout(() => {
         handleClose();
-      }, 2500);
+      }, 1500);
     } else {
       setErrMsg("Please select an account/category");
       setTimeout(() => {

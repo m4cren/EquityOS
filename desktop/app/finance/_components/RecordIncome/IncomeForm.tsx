@@ -78,7 +78,7 @@ const IncomeForm = ({ handleClose }: Props) => {
         );
         setTimeout(() => {
           handleClose();
-        }, 2500);
+        }, 1500);
       } else {
         setErrMsg("Please select type of income");
         setTimeout(() => {

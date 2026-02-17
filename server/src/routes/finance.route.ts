@@ -21,6 +21,10 @@ import {
   fetchIncome,
   recordIncome,
 } from "../controllers/finance/income.controller.js";
+import {
+  fetchTransfer,
+  recordTransfer,
+} from "../controllers/finance/transfer.controller.js";
 
 const router: Router = Router();
 
@@ -39,4 +43,7 @@ router.get("/fetch-expense", requireAuth, fetchExpense);
 
 router.post("/record-income", requireAuth, recordIncome);
 router.get("/fetch-income", requireAuth, fetchIncome);
+
+router.post("/record-transfer", requireAuth, recordTransfer);
+router.get("/fetch-transfer", requireAuth, fetchTransfer);
 export default router;

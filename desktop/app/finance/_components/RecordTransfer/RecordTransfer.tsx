@@ -21,7 +21,7 @@ const RecordTransfer = ({ handleClose }: Props) => {
         <h2 className="text-[2.5vw] font-bold w-[22vw] text-center">
           Record Transfer
         </h2>
-        <TransferForm />
+        <TransferForm handleClose={handleClose} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { api } from "@/app/service/api-client";
-import { IncomeTypes, TransferTypes } from "@/lib/types";
+import { TransferTypes } from "@/lib/types";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchFinanceAccount } from "../financeAccountSlice/controller";
 

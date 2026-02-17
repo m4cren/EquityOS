@@ -133,6 +133,8 @@ export type TransferTypes = {
   to_acc_icon: AccountIconTypes;
   to_acc: string;
   date_str: string;
+  from_acc_id: string;
+  to_acc_id: string;
 };
 
 export type TransferStateTypes = {
