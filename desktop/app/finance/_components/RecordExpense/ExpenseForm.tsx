@@ -1,6 +1,7 @@
 "use client";
 
 import DropDownSelection from "@/app/_components/DropDownSelection";
+import ErrorMessage from "@/app/_components/ErrorMessage";
 import {
   AccountIconTypes,
   expenseCategoryIconMap,
@@ -9,13 +10,11 @@ import {
 } from "@/lib/types";
 import { useExpenseCategory } from "@/store/ExpenseCategorySlice/useExpenseCategory";
 import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
+import { useExpense } from "@/store/RecordExpense/useExpense";
 import { Calendar, Coins, Logs, Plus, UserCircle } from "lucide-react";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { useForm } from "react-hook-form";
 import { accountIconMapp } from "../Accounts/Accounts";
-import ErrorMessage from "@/app/_components/ErrorMessage";
-import { useExpense } from "@/store/RecordExpense/useExpense";
-import { AsyncThunk, AsyncThunkConfig } from "@reduxjs/toolkit";
 
 interface Props {
   handleClose: () => {
@@ -45,7 +44,7 @@ const ExpenseFormStatic = ({ handleClose }: Props) => {
   const { expense_category } = useExpenseCategory();
   const categories = expense_category;
 
-  const onSubmit = (data: ExpenseTypes) => {
+  const onSubmit = async (data: ExpenseTypes) => {
     setIsSubmitting(true);
     const dateObj = new Date(data.date_str);
     const dateToday = new Date();
@@ -66,7 +65,7 @@ const ExpenseFormStatic = ({ handleClose }: Props) => {
       return;
     }
     if (selectedAccount && selectedCategory?.icon && selectedCategory.label) {
-      dispatch(
+      await dispatch(
         recordExpense({
           ...data,
           date_str: data.date_str ? formFormattedDate : dateTodayFormatted,
@@ -82,9 +81,8 @@ const ExpenseFormStatic = ({ handleClose }: Props) => {
           account: selectedAccount,
         })
       );
-      setTimeout(() => {
-        handleClose();
-      }, 1500);
+      setIsSubmitting(false);
+      handleClose();
     } else {
       setErrMsg("Please select an account/category");
       setTimeout(() => {
@@ -228,15 +226,49 @@ const ExpenseFormStatic = ({ handleClose }: Props) => {
       <button
         disabled={isSubmitting}
         type="submit"
-        className="disabled:opacity-50 disabled:cursor-not-allowed  cursor-pointer text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center"
+        className="
+    relative
+    flex items-center justify-center gap-2
+    px-4 py-2
+    rounded-xl
+    bg-neutral-900
+    text-white
+    text-sm font-medium
+    transition-all duration-200
+    hover:bg-neutral-800
+    active:scale-[0.98]
+    disabled:opacity-60
+    disabled:cursor-not-allowed cursor-pointer
+  "
       >
         {!isSubmitting ? (
           <>
-            <Plus />
-            Record
+            <Plus size={18} />
+            <span className="">Record</span>
           </>
         ) : (
-          <p>Submitting</p>
+          <>
+            <svg
+              className="animate-spin h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            <span>Recording...</span>
+          </>
         )}
       </button>
     </form>

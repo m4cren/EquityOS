@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import RenderRecordFinance from "./RenderRecordFinance";
+import { ShowAmountProvider } from "@/lib/context/showAmountProvider";
 
 export const metadata: Metadata = {
   title: "Finance",
@@ -24,7 +25,9 @@ export default function RootLayout({
       />
       <RenderRecordFinance />
 
-      <section className="flex flex-col gap-[2vw] px-[8vw]">{children}</section>
+      <section className="flex flex-col gap-[2vw] px-[8vw]">
+        <ShowAmountProvider>{children}</ShowAmountProvider>
+      </section>
     </main>
   );
 }

@@ -6,10 +6,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { incomeColorTypeMap } from "./IncomeTypes";
 import { CustomTooltip } from "@/app/_components/CustomToolTip";
 import { useIncomeSummary } from "@/hooks/useIncomeSummary";
-
-const isBalanceShown = true;
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 
 const PieChartComponent = () => {
+  const { isBalanceShown } = useShowAmountContext();
   const { incomeOverallDistribution } = useIncomeSummary();
   return (
     <div className="relative flex flex-col gap-[1vw] w-full h-[33vw] border-2 border-card rounded-[0.5vw] p-[1.25vw]">

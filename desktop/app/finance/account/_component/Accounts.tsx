@@ -6,10 +6,11 @@ import { useState } from "react";
 import AccountCard from "./AccountCard";
 import NewAccountForm from "./NewAccountForm";
 
-import { AccountIconTypes, AccountTypes } from "@/lib/types";
-import ShowAmountButton from "../../_components/ShowAmountButton";
-import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
+import { AccountIconTypes } from "@/lib/types";
 import { editFinanceAccount } from "@/store/financeAccountSlice/controller";
+import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
+import ShowAmountButton from "../../_components/ShowAmountButton";
 
 const Accounts = () => {
   const {
@@ -22,7 +23,7 @@ const Accounts = () => {
 
   const [isNewAccount, setIsNewAccount] = useState(false);
 
-  const isBalanceShown = true; // static
+  const { isBalanceShown } = useShowAmountContext();
 
   const handleDeleteAccount = ({ id, name }: { id: string; name: string }) => {
     if (name && id) {

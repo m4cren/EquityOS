@@ -13,6 +13,7 @@ import { AccountIconTypes, IncomeTypes } from "@/lib/types";
 
 import { incomeColorTypeMap } from "./IncomeTypes";
 import { accountIconMapp } from "../../_components/Accounts/Accounts";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 
 const incomeHistoryHeader: { label: string; icon: LucideIcon }[] = [
   { label: "Income Stream", icon: Banknote },
@@ -22,9 +23,8 @@ const incomeHistoryHeader: { label: string; icon: LucideIcon }[] = [
   { label: "Date", icon: Calendar },
 ];
 
-const isBalanceShown = true; // static
-
 const Table = ({ sortedByDate }: { sortedByDate: IncomeTypes[] }) => {
+  const { isBalanceShown } = useShowAmountContext();
   return (
     <table>
       <thead>

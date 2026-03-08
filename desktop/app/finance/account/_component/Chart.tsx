@@ -1,6 +1,7 @@
 "use client";
 
 import { CustomTooltip } from "@/app/_components/CustomToolTip";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
 import { BarChart2 } from "lucide-react";
 import {
@@ -15,6 +16,7 @@ import {
 
 const Chart = () => {
   const { accounts } = useFinanceAccount();
+  const { isBalanceShown } = useShowAmountContext();
   return (
     <div className="relative flex flex-col gap-[1vw] w-[20vw] h-[22vw] border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <div className="flex items-center justify-between">
@@ -46,12 +48,13 @@ const Chart = () => {
             }}
           />
 
-          <Tooltip
-            content={CustomTooltip}
-            isAnimationActive={false}
-            cursor={false}
-          />
-
+          {isBalanceShown && (
+            <Tooltip
+              content={CustomTooltip}
+              isAnimationActive={false}
+              cursor={false}
+            />
+          )}
           <Bar
             dataKey="balance"
             fill="#fa8c01"

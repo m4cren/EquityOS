@@ -22,7 +22,7 @@ const TransferFormStatic = ({ handleClose }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { dispatch, recordTransfer } = useTransfer();
 
-  const onSubmit = (data: TransferTypes) => {
+  const onSubmit = async (data: TransferTypes) => {
     const dateObj = new Date(data.date_str);
     const dateToday = new Date();
 
@@ -38,7 +38,7 @@ const TransferFormStatic = ({ handleClose }: Props) => {
     });
     if (selectedAccount.from_acc && selectedAccount.to_acc) {
       setIsSubmitting(true);
-      dispatch(
+      await dispatch(
         recordTransfer({
           ...data,
           date_str: data.date_str ? formFormattedDate : dateTodayFormatted,
@@ -59,9 +59,8 @@ const TransferFormStatic = ({ handleClose }: Props) => {
             "",
         })
       );
-      setTimeout(() => {
-        handleClose();
-      }, 1500);
+      setIsSubmitting(false);
+      handleClose();
     } else {
       setErrMsg("Select an account");
       setTimeout(() => {
@@ -230,15 +229,49 @@ const TransferFormStatic = ({ handleClose }: Props) => {
       <button
         disabled={isSubmitting}
         type="submit"
-        className="cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed  text-[0.9vw] py-[0.4vw] bg-[#2c2c2c] rounded-[0.6vw] flex flex-col items-center justify-center "
+        className="
+    relative
+    flex items-center justify-center gap-2
+    px-4 py-2
+    rounded-xl
+    bg-neutral-900
+    text-white
+    text-sm font-medium
+    transition-all duration-200
+    hover:bg-neutral-800
+    active:scale-[0.98]
+    disabled:opacity-60
+    disabled:cursor-not-allowed cursor-pointer
+  "
       >
         {!isSubmitting ? (
           <>
-            <Plus />
-            Record
+            <Plus size={18} />
+            <span className="">Record</span>
           </>
         ) : (
-          <p>Submitting</p>
+          <>
+            <svg
+              className="animate-spin h-4 w-4"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+              />
+            </svg>
+            <span>Recording...</span>
+          </>
         )}
       </button>
     </form>

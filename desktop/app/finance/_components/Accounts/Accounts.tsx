@@ -1,6 +1,6 @@
 "use client";
 
-import { AccountIconTypes } from "@/lib/types";
+import { AccountIconTypes, NetWorthArgs } from "@/lib/types";
 import {
   CreditCard,
   Landmark,
@@ -12,6 +12,11 @@ import {
 import SkeletonCard from "./SkeletonCard";
 import ShowAmountButton from "../ShowAmountButton";
 import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
+import { useEffect, useRef } from "react";
+import { useNetworthState } from "@/store/netWorth/useNetWorth";
+import { useTodayNetWorth } from "@/store/netWorth/useTodayNetWorth";
+import { sort } from "fast-sort";
 
 export const accountIconMapp: Record<AccountIconTypes, LucideIcon> = {
   wallet: Wallet,
@@ -20,10 +25,51 @@ export const accountIconMapp: Record<AccountIconTypes, LucideIcon> = {
   savings: PiggyBank,
 };
 
-const isBalanceShown = true; // static toggle
-
 const Accounts = () => {
   const { accounts, is_pending } = useFinanceAccount();
+
+  const {
+    netWorth: { netWorth },
+    dispatch,
+    updateNetWorth,
+  } = useNetworthState();
+  const { isBalanceShown } = useShowAmountContext();
+  const hasUpdated = useRef(false);
+  const dateToday = new Date();
+  const formattedDate = dateToday.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
+
+  const totalNetWorthThisDay = useTodayNetWorth();
+
+  useEffect(() => {
+    if (hasUpdated.current) return;
+
+    const sortedNetWorth = sort(netWorth).desc((t) =>
+      new Date(t.date_str).getTime()
+    );
+    console.log(totalNetWorthThisDay);
+    if (!sortedNetWorth[0] || totalNetWorthThisDay === 0) return;
+    if (formattedDate === sortedNetWorth[0].date_str) {
+    } else {
+      const args: NetWorthArgs = {
+        balance: totalNetWorthThisDay,
+        date_str: formattedDate,
+      };
+
+      dispatch(updateNetWorth(args));
+      hasUpdated.current = true;
+    }
+  }, [
+    accounts,
+    dispatch,
+    formattedDate,
+    netWorth,
+    updateNetWorth,
+    totalNetWorthThisDay,
+  ]);
   return (
     <div className="flex flex-col gap-[1vw] w-[20vw] h-fit border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <div className="flex items-center justify-between">

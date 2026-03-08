@@ -1,6 +1,7 @@
 import { Calendar, Coins, LucideIcon, Mail, Send } from "lucide-react";
 import { AccountIconTypes, TransferTypes } from "@/lib/types";
 import { accountIconMapp } from "../../_components/Accounts/Accounts";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 
 const transferHistoryHeader: { label: string; icon: LucideIcon }[] = [
   { label: "From account", icon: Send },
@@ -9,9 +10,8 @@ const transferHistoryHeader: { label: string; icon: LucideIcon }[] = [
   { label: "Date", icon: Calendar },
 ];
 
-const isBalanceShown = true; // static
-
 const Table = ({ sortedByDate }: { sortedByDate: TransferTypes[] }) => {
+  const { isBalanceShown } = useShowAmountContext();
   return (
     <table>
       <thead>

@@ -12,6 +12,7 @@ import { accountIconMapp } from "../../_components/Accounts/Accounts";
 import { AccountIconTypes } from "@/lib/types";
 import { useFinanceAccount } from "@/store/financeAccountSlice/useFinanceAccount";
 import TableSkeleton from "./TableSkeleton";
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 
 // 🔹 TABLE HEADERS
 const tableHeader: { label: string; icon: LucideIcon }[] = [
@@ -21,10 +22,10 @@ const tableHeader: { label: string; icon: LucideIcon }[] = [
   { label: "Total Expense", icon: BanknoteArrowUp },
 ];
 
-const isBalanceShown = true; // static toggle
-
 const Details = () => {
   const { accounts, is_pending } = useFinanceAccount();
+
+  const { isBalanceShown } = useShowAmountContext();
   return (
     <div className="flex flex-col gap-[1vw] w-full h-fit border-2 border-card rounded-[0.5vw] p-[1.25vw]">
       <div className="flex items-center gap-[0.6vw]">

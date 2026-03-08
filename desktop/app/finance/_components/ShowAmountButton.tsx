@@ -1,13 +1,15 @@
+import { useShowAmountContext } from "@/lib/context/showAmountProvider";
 import { Eye, EyeClosed } from "lucide-react";
 import React from "react";
 
 const ShowAmountButton = () => {
+  const { isBalanceShown, setIsBalanceShown } = useShowAmountContext();
   return (
     <button
-      onClick={() => {}}
+      onClick={() => setIsBalanceShown(!isBalanceShown)}
       className="cursor-pointer opacity-80 hover:opacity-100 hover:scale-108 transition duration-100"
     >
-      {true ? <Eye size={20} /> : <EyeClosed size={20} />}
+      {!isBalanceShown ? <Eye size={20} /> : <EyeClosed size={20} />}
     </button>
   );
 };

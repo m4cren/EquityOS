@@ -1,7 +1,5 @@
-import React from "react";
-
-const page = () => {
-  return <div></div>;
+const Page = () => {
+  return <section className="p-10"></section>;
 };
 
-export default page;
+export default Page;

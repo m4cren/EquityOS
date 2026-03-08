@@ -4,10 +4,12 @@ import Clock from "./Clock/Clock";
 import Calendar from "./Calendar/Calendar";
 import TodoList from "./TodoList/TodoList";
 import { useTask } from "@/store/taskSlice/useTask";
+import { useGetTodayNetWorth } from "@/store/netWorth/useGetTodayNetWorth";
 
 const Homepage = () => {
   const { err_msg, is_pending, tasks, addTask, dispatch, finishTask } =
     useTask();
+  useGetTodayNetWorth();
   return (
     <main className="relative flex flex-col w-full justify-between h-screen p-10">
       <div className="flex  justify-between w-full gap-10 ">

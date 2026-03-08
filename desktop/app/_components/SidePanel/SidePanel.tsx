@@ -31,7 +31,7 @@ const menuLinks: { icon: LucideIcon; label: string; path: string }[] = [
   {
     icon: ChartCandlestick,
     label: "Trading",
-    path: "/trading",
+    path: "/trading/profile/equity",
   },
   {
     icon: Settings,

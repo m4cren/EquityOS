@@ -24,5 +24,6 @@ export const useFinanceAccount = () => {
     accounts,
     deleteFinanceAccount,
     editFinanceAccount,
+    fetchFinanceAccount,
   };
 };

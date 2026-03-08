@@ -1,4 +1,6 @@
+import { ChevronDown, Trophy, User } from "lucide-react";
 import type { Metadata } from "next";
+import NavBar from "./_components/NavBar/NavBar";
 
 export const metadata: Metadata = {
   title: "Trading",
@@ -10,5 +12,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div>{children}</div>;
+  return (
+    <div className="">
+      {" "}
+      <NavBar />
+      {children}
+    </div>
+  );
 }

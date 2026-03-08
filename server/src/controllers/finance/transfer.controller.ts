@@ -64,4 +64,13 @@ export const recordTransfer = async (req: Request, res: Response) => {
 
 export const fetchTransfer = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
+
+  const { data, error } = await supabase.from("transfer").select("*");
+
+  if (error) {
+    console.log(error);
+    return res.json(error);
+  }
+
+  return res.json(data);
 };

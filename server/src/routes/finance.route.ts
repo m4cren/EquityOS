@@ -25,6 +25,11 @@ import {
   fetchTransfer,
   recordTransfer,
 } from "../controllers/finance/transfer.controller.js";
+import {
+  fetchNetWorth,
+  initializeNetWorth,
+  updateNetWorth,
+} from "../controllers/finance/networth.controller.js";
 
 const router: Router = Router();
 
@@ -46,4 +51,9 @@ router.get("/fetch-income", requireAuth, fetchIncome);
 
 router.post("/record-transfer", requireAuth, recordTransfer);
 router.get("/fetch-transfer", requireAuth, fetchTransfer);
+
+router.post("/initialize-networth", requireAuth, initializeNetWorth);
+
+router.post("/update-networth", requireAuth, updateNetWorth);
+router.get("/fetch-networth", requireAuth, fetchNetWorth);
 export default router;
