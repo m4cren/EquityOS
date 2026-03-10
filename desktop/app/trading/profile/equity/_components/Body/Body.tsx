@@ -20,8 +20,13 @@ const sortedData = [
 ];
 const Body = () => {
   return (
-    <div className="w-full">
-      <div className="w-[85%] h-100">
+    <div className="w-full flex flex-col gap-3">
+      <h5 className="text-xl  font-semibold">Charts</h5>
+      <ul className="border flex w-fit p-2 text-xs font-semibold gap-2 border-card rounded-md">
+        <li className="px-3 cursor-pointer bg-card py-1 rounded-sm">Equity</li>
+        <li className="px-3 cursor-pointer py-1 rounded-sm">Net Profit</li>
+      </ul>
+      <div className="w-full h-100">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={sortedData} layout="horizontal">
             <CartesianGrid vertical={false} opacity={0.1} />

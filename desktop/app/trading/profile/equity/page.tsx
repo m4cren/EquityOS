@@ -3,7 +3,7 @@ import Head from "./_components/Head/Head";
 
 const page = () => {
   return (
-    <div className="flex flex-col gap-20 items-start mt-6 h-screen ">
+    <div className="flex flex-col gap-16 items-start mt-6 h-screen ">
       <Head />
       <Body />
     </div>

@@ -1,7 +1,7 @@
-import React from "react";
+import Journal from "./Journal";
 
 const page = () => {
-  return <div></div>;
+  return <Journal />;
 };
 
 export default page;
