@@ -6,6 +6,7 @@ export type Day = { date: Date; isCurrentMonth: boolean; isToday: boolean };
 export default function useCalendar(): {
   days: Day[];
   monthLabel: string;
+  current: Date;
   prevMonth: () => void;
   nextMonth: () => void;
 } {
@@ -52,5 +53,5 @@ export default function useCalendar(): {
   const nextMonth = () =>
     setCurrent((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
 
-  return { days, monthLabel, prevMonth, nextMonth };
+  return { days, monthLabel, prevMonth, nextMonth, current };
 }
