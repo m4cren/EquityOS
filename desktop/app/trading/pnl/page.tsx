@@ -1,5 +1,6 @@
 import React from "react";
 import PNLCalendar from "./_components/PNLCalendar";
+import TradeJournalForm from "./_components/LogTrade";
 
 const page = () => {
   return (
