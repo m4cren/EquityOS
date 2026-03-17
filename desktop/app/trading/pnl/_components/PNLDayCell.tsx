@@ -11,6 +11,7 @@ type Props = {
   trades: TradeItem[];
   onAddTrade: () => void;
   onOpenTrade: (tradeId: string) => void;
+  onOpenDayTrades: (date: Date) => void;
 };
 
 const PNLDayCell: React.FC<Props> = ({
@@ -18,12 +19,32 @@ const PNLDayCell: React.FC<Props> = ({
   trades = [],
   onAddTrade,
   onOpenTrade,
+  onOpenDayTrades,
 }) => {
   const isToday = day.isToday;
   const isCurrentMonth = day.isCurrentMonth;
+  const hasTrades = trades.length > 0;
+
+  const handleCellClick = () => {
+    if (!isCurrentMonth || !hasTrades) return;
+    onOpenDayTrades(day.date);
+  };
+
+  const handleCellKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!isCurrentMonth || !hasTrades) return;
+
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onOpenDayTrades(day.date);
+    }
+  };
 
   return (
     <div
+      role={hasTrades && isCurrentMonth ? "button" : undefined}
+      tabIndex={hasTrades && isCurrentMonth ? 0 : -1}
+      onClick={handleCellClick}
+      onKeyDown={handleCellKeyDown}
       className={classNames(
         "group relative w-full min-h-28 rounded-xl border transition-all duration-200 overflow-hidden",
         {
@@ -32,14 +53,18 @@ const PNLDayCell: React.FC<Props> = ({
           "bg-transparent border-white/10 hover:border-white/20 hover:bg-white/[0.03]":
             !isToday,
           "opacity-45": !isCurrentMonth,
+          "cursor-pointer": hasTrades && isCurrentMonth,
         }
       )}
     >
       {isCurrentMonth && isToday && (
         <button
           type="button"
-          onClick={onAddTrade}
-          className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-lg bg-flame/25 hover:bg-flame/40 border border-flame/20 hover:border-flame/40 backdrop-blur-sm p-1.5 transition-all duration-200 shadow-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddTrade();
+          }}
+          className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-lg bg-flame/25 hover:bg-flame/40 border border-flame/20 hover:border-flame/40 backdrop-blur-sm p-1.5 transition-all duration-200 shadow-xl"
         >
           <Plus size={15} strokeWidth={2.5} className="text-white" />
         </button>
@@ -72,9 +97,12 @@ const PNLDayCell: React.FC<Props> = ({
               <button
                 key={trade.id}
                 type="button"
-                onClick={() => onOpenTrade(trade.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTrade(trade.id);
+                }}
                 className={classNames(
-                  "w-full rounded-md px-2 py-1 text-left text-[0.68vw] transition truncate",
+                  "w-full flex items-center justify-between rounded-md px-2 py-1 text-[0.72vw] transition",
                   {
                     "bg-yellow-500/15 text-yellow-300 hover:bg-yellow-500/20":
                       !isClosed,
@@ -84,12 +112,16 @@ const PNLDayCell: React.FC<Props> = ({
                     "bg-white/10 text-white/70 hover:bg-white/15": isBreakeven,
                   }
                 )}
-                title={`${trade.pair} • ${trade.type}${
-                  isClosed ? ` • ${trade.pnl}` : " • Open"
-                }`}
               >
-                <span className="font-medium">{trade.pair || "No Pair"}</span> ·{" "}
-                {trade.type} · {isClosed ? trade.pnl : "Open"}
+                <span className="font-medium tracking-wide">
+                  {trade.pair || "PAIR"}
+                </span>
+
+                <span className="font-semibold tabular-nums">
+                  {isClosed
+                    ? `${trade.pnl! > 0 ? "+" : ""}${trade.pnl}R`
+                    : "Open"}
+                </span>
               </button>
             );
           })}

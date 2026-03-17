@@ -5,20 +5,23 @@ import useCalendar from "@/hooks/useCalendar";
 import PNLDayCell from "./PNLDayCell";
 import CalendarSummary from "./CalendarSummary";
 import TradeJournalModal, { TradeFormData } from "./LogTrade";
+import DayTradesModal from "./DayTradeModal";
 const demoClosedTrades: (TradeFormData & { id: string })[] = [
   {
-    id: "trade-1",
+    id: "trade-jan-1",
     pair: "EURUSD",
     type: "Long",
-    openTime: "2026-03-02T09:15",
-    closeTime: "2026-03-02T11:40",
+    openTime: "2026-01-06T09:10",
+    closeTime: "2026-01-06T10:35",
     risk: 1,
-    notes: "London session continuation after sweep.",
-    postNotes: "Followed plan well. Took profit at resistance.",
+    notes: "London continuation from discount.",
+    postNotes: "Clean continuation and target hit.",
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 125.5,
+    pnl: 1.8,
+    pnl_in_usd: 180,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -31,7 +34,267 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-2",
+    id: "trade-jan-2",
+    pair: "GBPUSD",
+    type: "Short",
+    openTime: "2026-01-08T13:20",
+    closeTime: "2026-01-08T14:25",
+    risk: 1,
+    notes: "NY reversal short from premium.",
+    postNotes: "Entry good, partial exit early.",
+    tierSetup: "A",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 1.1,
+    pnl_in_usd: 110,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: false,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-jan-3",
+    pair: "AUDUSD",
+    type: "Long",
+    openTime: "2026-01-10T08:40",
+    closeTime: "2026-01-10T09:30",
+    risk: 1,
+    notes: "Asia continuation after sweep.",
+    postNotes: "Followed plan, took full target.",
+    tierSetup: "A++",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 1.4,
+    pnl_in_usd: 140,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-jan-4",
+    pair: "GBPAUD",
+    type: "Short",
+    openTime: "2026-01-14T14:05",
+    closeTime: "2026-01-14T15:15",
+    risk: 1,
+    notes: "Break and retest short.",
+    postNotes: "Stopped out on reclaim.",
+    tierSetup: "A",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: -0.9,
+    pnl_in_usd: -90,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: false,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-jan-5",
+    pair: "EURUSD",
+    type: "Short",
+    openTime: "2026-01-20T10:00",
+    closeTime: "2026-01-20T11:50",
+    risk: 1,
+    notes: "Liquidity sweep then bearish displacement.",
+    postNotes: "Good hold to full TP.",
+    tierSetup: "A++",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 2.2,
+    pnl_in_usd: 220,
+    accounts: ["m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-1",
+    pair: "EURUSD",
+    type: "Long",
+    openTime: "2026-02-02T09:15",
+    closeTime: "2026-02-02T11:40",
+    risk: 1,
+    notes: "London session continuation after sweep.",
+    postNotes: "Followed plan well. Took profit at resistance.",
+    tierSetup: "A++",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 1.25,
+    pnl_in_usd: 125.5,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-2",
+    pair: "GBPUSD",
+    type: "Short",
+    openTime: "2026-02-05T10:15",
+    closeTime: "2026-02-05T12:00",
+    risk: 1,
+    notes: "NY reversal setup.",
+    postNotes: "Good reaction, but exited earlier than planned.",
+    tierSetup: "A",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 0.8,
+    pnl_in_usd: 78.25,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: false,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-3",
+    pair: "AUDUSD",
+    type: "Long",
+    openTime: "2026-02-09T08:20",
+    closeTime: "2026-02-09T10:05",
+    risk: 1,
+    notes: "Asia to London continuation.",
+    postNotes: "Clean execution and target hit.",
+    tierSetup: "A++",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 1.0,
+    pnl_in_usd: 96,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-4",
+    pair: "GBPAUD",
+    type: "Short",
+    openTime: "2026-02-12T14:00",
+    closeTime: "2026-02-12T15:10",
+    risk: 1,
+    notes: "Break and retest short.",
+    postNotes: "Stopped out after reclaim.",
+    tierSetup: "A",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: -0.5,
+    pnl_in_usd: -52.5,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: false,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-5",
+    pair: "EURUSD",
+    type: "Short",
+    openTime: "2026-02-18T10:30",
+    closeTime: "2026-02-18T12:00",
+    risk: 1,
+    notes: "Liquidity sweep into bearish displacement.",
+    postNotes: "Held to target, no issues.",
+    tierSetup: "A++",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 1.4,
+    pnl_in_usd: 140,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: true,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-feb-6",
+    pair: "GBPUSD",
+    type: "Long",
+    openTime: "2026-02-21T09:45",
+    closeTime: "2026-02-21T10:50",
+    risk: 1,
+    notes: "Opening drive continuation.",
+    postNotes: "Took partials too early but still green.",
+    tierSetup: "A",
+    preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
+    postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
+    pnl: 0.65,
+    pnl_in_usd: 64.75,
+    accounts: ["Funded_m4cren", "m4cren"],
+    setupCriteria: {
+      isRefined: true,
+      isBelowOrAboveOpeningPrice: true,
+      isMssOccured: true,
+      isIFVG: true,
+      isFVG: false,
+      isDisplacement: true,
+      isLiquiditySweep: true,
+      isPoiMitigated: true,
+    },
+  },
+  {
+    id: "trade-mar-1",
     pair: "GBPUSD",
     type: "Short",
     openTime: "2026-03-02T09:15",
@@ -42,7 +305,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 78.25,
+    pnl: 0.8,
+    pnl_in_usd: 78.25,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -55,7 +320,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-3",
+    id: "trade-mar-2",
     pair: "AUDUSD",
     type: "Long",
     openTime: "2026-03-04T08:20",
@@ -66,7 +331,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 96,
+    pnl: 1.0,
+    pnl_in_usd: 96,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -79,7 +346,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-4",
+    id: "trade-mar-3",
     pair: "GBPAUD",
     type: "Short",
     openTime: "2026-03-05T14:00",
@@ -90,7 +357,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: -52.5,
+    pnl: -0.5,
+    pnl_in_usd: -52.5,
+    accounts: ["m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -103,7 +372,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-5",
+    id: "trade-mar-4",
     pair: "EURUSD",
     type: "Short",
     openTime: "2026-03-06T10:30",
@@ -114,7 +383,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 140,
+    pnl: 1.4,
+    pnl_in_usd: 140,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -127,7 +398,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-6",
+    id: "trade-mar-5",
     pair: "GBPUSD",
     type: "Long",
     openTime: "2026-03-07T09:45",
@@ -138,7 +409,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 64.75,
+    pnl: 0.65,
+    pnl_in_usd: 64.75,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -151,7 +424,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-7",
+    id: "trade-mar-6",
     pair: "AUDUSD",
     type: "Short",
     openTime: "2026-03-08T11:20",
@@ -162,7 +435,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: -38.2,
+    pnl: -0.4,
+    pnl_in_usd: -38.2,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -175,7 +450,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-8",
+    id: "trade-mar-7",
     pair: "GBPAUD",
     type: "Long",
     openTime: "2026-03-09T08:10",
@@ -186,7 +461,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 88.4,
+    pnl: 0.9,
+    pnl_in_usd: 88.4,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -199,7 +476,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-9",
+    id: "trade-mar-8",
     pair: "EURUSD",
     type: "Long",
     openTime: "2026-03-10T13:40",
@@ -210,7 +487,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 71.1,
+    pnl: 0.7,
+    pnl_in_usd: 71.1,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -223,7 +502,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-10",
+    id: "trade-mar-9",
     pair: "GBPUSD",
     type: "Short",
     openTime: "2026-03-11T10:05",
@@ -234,7 +513,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 118.9,
+    pnl: 1.2,
+    pnl_in_usd: 118.9,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -247,7 +528,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-11",
+    id: "trade-mar-10",
     pair: "AUDUSD",
     type: "Long",
     openTime: "2026-03-12T09:00",
@@ -258,7 +539,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 54.6,
+    pnl: 0.55,
+    pnl_in_usd: 54.6,
+    accounts: ["m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -271,7 +554,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-12",
+    id: "trade-mar-11",
     pair: "GBPAUD",
     type: "Short",
     openTime: "2026-03-13T14:25",
@@ -282,7 +565,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: -67.3,
+    pnl: -0.7,
+    pnl_in_usd: -67.3,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -295,7 +580,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-13",
+    id: "trade-mar-12",
     pair: "EURUSD",
     type: "Short",
     openTime: "2026-03-14T08:50",
@@ -306,7 +591,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 82,
+    pnl: 0.8,
+    pnl_in_usd: 82,
+    accounts: ["Funded_m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -319,7 +606,7 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     },
   },
   {
-    id: "trade-14",
+    id: "trade-mar-13",
     pair: "GBPUSD",
     type: "Long",
     openTime: "2026-03-15T11:10",
@@ -330,7 +617,9 @@ const demoClosedTrades: (TradeFormData & { id: string })[] = [
     tierSetup: "A++",
     preSetupImg: ["https://www.tradingview.com/x/OFAwlIUP/"],
     postSetupImg: "https://www.tradingview.com/x/OFAwlIUP/",
-    pnl: 132.4,
+    pnl: 1.3,
+    pnl_in_usd: 132.4,
+    accounts: ["Funded_m4cren", "m4cren"],
     setupCriteria: {
       isRefined: true,
       isBelowOrAboveOpeningPrice: true,
@@ -356,6 +645,12 @@ const PNLCalendar = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
 
+  const [isDayTradesModalOpen, setIsDayTradesModalOpen] = useState(false);
+  const [selectedDayTrades, setSelectedDayTrades] = useState<
+    (TradeFormData & { id: string })[]
+  >([]);
+  const [selectedDayLabel, setSelectedDayLabel] = useState("");
+
   const [trades, setTrades] =
     useState<(TradeFormData & { id: string })[]>(demoClosedTrades);
 
@@ -377,6 +672,28 @@ const PNLCalendar = () => {
     setSelectedDate(existing.openTime.split("T")[0]);
     setSelectedTradeId(tradeId);
     setIsTradeModalOpen(true);
+  };
+
+  const openDayTradesModal = (date: Date) => {
+    const localDate = new Date(date);
+    const yyyy = localDate.getFullYear();
+    const mm = String(localDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(localDate.getDate()).padStart(2, "0");
+    const dayKey = `${yyyy}-${mm}-${dd}`;
+
+    const matchedTrades = trades.filter(
+      (trade) => trade.openTime.split("T")[0] === dayKey
+    );
+
+    setSelectedDayTrades(matchedTrades);
+    setSelectedDayLabel(
+      localDate.toLocaleDateString(undefined, {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    );
+    setIsDayTradesModalOpen(true);
   };
 
   const handleSaveTrade = (payload: TradeFormData & { id?: string }) => {
@@ -456,6 +773,7 @@ const PNLCalendar = () => {
                   trades={dayTrades}
                   onAddTrade={() => openNewTradeModal(day.date)}
                   onOpenTrade={openExistingTradeModal}
+                  onOpenDayTrades={openDayTradesModal}
                 />
               );
             })}
@@ -466,6 +784,7 @@ const PNLCalendar = () => {
           days={days}
           monthLabel={monthLabel}
           currentDate={currentDate}
+          trades={trades}
         />
       </div>
 
@@ -478,6 +797,22 @@ const PNLCalendar = () => {
             setIsTradeModalOpen(false);
             setSelectedDate(null);
             setSelectedTradeId(null);
+          }}
+        />
+      )}
+
+      {isDayTradesModalOpen && (
+        <DayTradesModal
+          dateLabel={selectedDayLabel}
+          trades={selectedDayTrades}
+          onClose={() => {
+            setIsDayTradesModalOpen(false);
+            setSelectedDayTrades([]);
+            setSelectedDayLabel("");
+          }}
+          onOpenTrade={(tradeId) => {
+            setIsDayTradesModalOpen(false);
+            openExistingTradeModal(tradeId);
           }}
         />
       )}

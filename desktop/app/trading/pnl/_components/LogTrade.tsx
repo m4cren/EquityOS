@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 
 type Pair = "EURUSD" | "AUDUSD" | "GBPUSD" | "GBPAUD" | "";
 
+const ACCOUNTS_STATIC = ["m4cren", "Funded_m4cren"] as const;
+
 export type SetupCriteria = {
   isRefined: boolean;
   isBelowOrAboveOpeningPrice: boolean;
@@ -29,6 +31,8 @@ export type TradeFormData = {
   postSetupImg: string | null;
   pnl: number | null;
   setupCriteria: SetupCriteria;
+  accounts: string[];
+  pnl_in_usd: number | null;
 };
 
 type Props = {
@@ -128,6 +132,8 @@ const createDefaultTrade = (selectedDate?: string | null): TradeFormData => ({
   postSetupImg: null,
   pnl: null,
   setupCriteria: { ...defaultCriteria },
+  accounts: [],
+  pnl_in_usd: 0,
 });
 
 export default function TradeJournalModal({
@@ -142,6 +148,7 @@ export default function TradeJournalModal({
           ...existingTrade,
           preSetupImg: [...existingTrade.preSetupImg],
           setupCriteria: { ...existingTrade.setupCriteria },
+          accounts: [...existingTrade.accounts],
         }
       : createDefaultTrade(selectedDate)
   );
@@ -192,8 +199,26 @@ export default function TradeJournalModal({
     }));
   };
 
+  const handleAccountToggle = (account: string) => {
+    if (shouldLockEntryFields) return;
+
+    setTrade((prev) => {
+      const exists = prev.accounts.includes(account);
+
+      return {
+        ...prev,
+        accounts: exists
+          ? prev.accounts.filter((item) => item !== account)
+          : [...prev.accounts, account],
+      };
+    });
+  };
+
   const handleInputChange = <
-    K extends keyof Omit<TradeFormData, "setupCriteria" | "preSetupImg">
+    K extends keyof Omit<
+      TradeFormData,
+      "setupCriteria" | "preSetupImg" | "accounts"
+    >
   >(
     key: K,
     value: TradeFormData[K]
@@ -242,6 +267,7 @@ export default function TradeJournalModal({
   };
 
   const canSaveOpenTrade =
+    trade.accounts.length > 0 &&
     !!trade.pair.trim() &&
     !!trade.openTime &&
     !!trade.risk &&
@@ -269,6 +295,9 @@ export default function TradeJournalModal({
   const validateTrade = () => {
     const nextErrors: string[] = [];
 
+    if (trade.accounts.length === 0) {
+      nextErrors.push("At least one account is required.");
+    }
     if (!trade.pair.trim()) nextErrors.push("Pair is required.");
     if (!trade.openTime) nextErrors.push("Open time is required.");
     if (!trade.risk || trade.risk <= 0) {
@@ -319,6 +348,7 @@ export default function TradeJournalModal({
           ...existingTrade,
           preSetupImg: [...existingTrade.preSetupImg],
           setupCriteria: { ...existingTrade.setupCriteria },
+          accounts: [...existingTrade.accounts],
         }
       : createDefaultTrade(selectedDate);
 
@@ -411,7 +441,26 @@ export default function TradeJournalModal({
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/5 p-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <div className="rounded-lg bg-black/20 p-3">
+                  <p className="mb-2 text-xs text-white/50">Accounts</p>
+
+                  {trade.accounts.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {trade.accounts.map((account) => (
+                        <span
+                          key={account}
+                          className="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-white/90"
+                        >
+                          {account}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-white/40">—</p>
+                  )}
+                </div>
+
                 <div className="rounded-lg bg-black/20 p-3">
                   <p className="mb-1 text-xs text-white/50">Closed At</p>
                   <p className="text-sm text-white">
@@ -435,8 +484,8 @@ export default function TradeJournalModal({
                 </div>
 
                 <div className="rounded-lg bg-black/20 p-3">
-                  <p className="mb-1 text-xs text-white/50">Status</p>
-                  <p className="text-sm text-white">Closed</p>
+                  <p className="mb-1 text-xs text-white/50">PnL in USD</p>
+                  <p className="text-sm text-white">{trade.pnl_in_usd}</p>
                 </div>
               </div>
 
@@ -494,6 +543,52 @@ export default function TradeJournalModal({
             </div>
           </>
         )}
+
+        <div className="space-y-2">
+          <label className="text-xs text-white/50">Accounts</label>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {ACCOUNTS_STATIC.map((account) => {
+              const checked = trade.accounts.includes(account);
+
+              return (
+                <label
+                  key={account}
+                  className={`flex items-center gap-3 rounded-lg px-4 py-3 border transition ${
+                    checked
+                      ? "border-green-500/30 bg-green-500/10 text-green-300"
+                      : "border-white/10 bg-white/5"
+                  } ${
+                    shouldLockEntryFields
+                      ? "cursor-not-allowed opacity-70"
+                      : "cursor-pointer"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={shouldLockEntryFields}
+                    onChange={() => handleAccountToggle(account)}
+                  />
+                  <span>{account}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {trade.accounts.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {trade.accounts.map((account) => (
+                <span
+                  key={account}
+                  className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80"
+                >
+                  {account}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -553,7 +648,6 @@ export default function TradeJournalModal({
 
           <div className="space-y-2">
             <label className="text-xs text-white/50">Open Time</label>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="relative">
                 <Calendar
@@ -806,21 +900,40 @@ export default function TradeJournalModal({
         )}
 
         {shouldShowCloseSection && (
-          <div className="space-y-2">
-            <label className="text-xs text-white/50">PnL</label>
-            <input
-              type="number"
-              step="0.01"
-              value={trade.pnl ?? ""}
-              onChange={(e) =>
-                handleInputChange(
-                  "pnl",
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
-              }
-              className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10"
-              placeholder="e.g. 125.50 or -75"
-            />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <label className="text-xs text-white/50">PnL</label>
+              <input
+                type="number"
+                step="0.01"
+                value={trade.pnl ?? ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "pnl",
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10"
+                placeholder="e.g. 1.50 or -0.75"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs text-white/50">PnL in USD</label>
+              <input
+                type="number"
+                step="0.01"
+                value={trade.pnl_in_usd ?? ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "pnl_in_usd",
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+                className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10"
+                placeholder="e.g. 125.50 or -75"
+              />
+            </div>
           </div>
         )}
 
