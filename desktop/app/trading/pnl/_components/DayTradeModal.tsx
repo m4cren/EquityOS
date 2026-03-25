@@ -2,7 +2,7 @@
 
 import React from "react";
 import classNames from "classnames";
-import type { TradeFormData } from "./LogTrade";
+import { TradeFormData } from "@/lib/types";
 
 type TradeItem = TradeFormData & { id: string };
 

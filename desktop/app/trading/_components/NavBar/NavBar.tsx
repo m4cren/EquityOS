@@ -1,29 +1,60 @@
 "use client";
+
+import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
+
 import classNames from "classnames";
-import { ChevronDown, Trophy, User } from "lucide-react";
+import { ChevronDown, House, Trophy, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 const NavBar = () => {
   const pathname = usePathname();
+
+  const { tradeAccount, setSelectedTradeAcc, selectedTradeAcc, dispatch } =
+    useTradeAccount();
+
+  const [open, setOpen] = useState(false);
 
   return (
     <nav className="p-5 px-18 flex items-center border-b border-white/10 justify-between w-full">
       <div>
         <ul className="flex gap-12 items-center text-sm font-medium text-white/75">
-          <Link
-            href={"/trading/profile/equity"}
-            className={classNames("flex items-center gap-2 px-2 py-0.5", {
-              "bg-card rounded-md font-semibold !text-white":
-                pathname.includes(`/trading/profile`),
-            })}
-          >
-            <User />
-            Macren Live
-            {pathname.includes(`/trading/profile`) && (
-              <button>
-                <ChevronDown />
-              </button>
+          {/* ACCOUNT DROPDOWN */}
+          <Link className=" relative" href={"/trading/profile/equity"}>
+            <button
+              className={classNames(
+                "flex cursor-pointer items-center gap-2 p-2",
+                {
+                  "bg-card rounded-md font-semibold !text-white":
+                    pathname.includes(`/trading/profile`),
+                }
+              )}
+            >
+              <House />
+            </button>
+
+            {open && (
+              <div className="absolute top-full mt-2 w-44 bg-card border border-white/10 rounded-md shadow-lg overflow-hidden z-50">
+                {tradeAccount.map((acc) => (
+                  <button
+                    key={acc}
+                    onClick={() => {
+                      dispatch(setSelectedTradeAcc(acc));
+                      setOpen(false);
+                    }}
+                    className={classNames(
+                      "w-full text-left px-3 py-2 text-sm hover:bg-white/10",
+                      {
+                        "bg-white/10 text-white font-semibold":
+                          acc === selectedTradeAcc,
+                      }
+                    )}
+                  >
+                    {acc}
+                  </button>
+                ))}
+              </div>
             )}
           </Link>
 
@@ -44,7 +75,7 @@ const NavBar = () => {
                 pathname.includes(`/trading/pnl`),
             })}
           >
-            PnL
+            Trade Log
           </Link>
         </ul>
       </div>

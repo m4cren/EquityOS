@@ -1,7 +1,7 @@
 import React from "react";
 
-const page = () => {
+const ProfitRate = () => {
   return <div></div>;
 };
 
-export default page;
+export default ProfitRate;

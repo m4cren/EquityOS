@@ -1,9 +1,9 @@
 "use client";
 
 import { Day } from "@/hooks/useCalendar";
+import { TradeFormData } from "@/lib/types";
 import classNames from "classnames";
 import React, { useMemo } from "react";
-import type { TradeFormData } from "./LogTrade";
 
 type TradeItem = TradeFormData & { id: string };
 
@@ -15,7 +15,9 @@ type Props = {
 };
 
 const formatPnL = (value: number) => {
-  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${Math.abs(value)}`;
+  return `${value > 0 ? "+" : value < 0 ? "-" : ""}${Math.abs(value).toFixed(
+    2
+  )}`;
 };
 
 const formatKey = (date: Date) => {

@@ -246,3 +246,37 @@ export type SettingsConfigStateTypes = {
   isPending: boolean;
   errMsg: string | null;
 };
+export type SetupCriteria = {
+  isRefined: boolean;
+  isBelowOrAboveOpeningPrice: boolean;
+  isMssOccured: boolean;
+  isIFVG: boolean;
+  isFVG: boolean;
+  isDisplacement: boolean;
+  isLiquiditySweep: boolean;
+  isPoiMitigated: boolean;
+};
+export type Pair = "EURUSD" | "AUDUSD" | "GBPUSD" | "";
+
+export type TradeFormData = {
+  pair: Pair;
+  type: "Long" | "Short";
+  openTime: string;
+  closeTime: string | null;
+  risk: number;
+  notes: string;
+  postNotes: string;
+  tierSetup: string;
+  preSetupImg: string[];
+  postSetupImg: string | null;
+  pnl: number | null;
+  setupCriteria: SetupCriteria;
+  accounts: string[];
+  pnl_in_usd: number | null;
+};
+
+export type TradeHistoryStateTypes = {
+  tradeHistory: (TradeFormData & { id: string })[];
+  isPending: boolean;
+  errMsg: string | null;
+};

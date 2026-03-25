@@ -1,39 +1,10 @@
 "use client";
 
+import { Pair, SetupCriteria, TradeFormData } from "@/lib/types";
 import { Calendar, Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 
-type Pair = "EURUSD" | "AUDUSD" | "GBPUSD" | "GBPAUD" | "";
-
 const ACCOUNTS_STATIC = ["m4cren", "Funded_m4cren"] as const;
-
-export type SetupCriteria = {
-  isRefined: boolean;
-  isBelowOrAboveOpeningPrice: boolean;
-  isMssOccured: boolean;
-  isIFVG: boolean;
-  isFVG: boolean;
-  isDisplacement: boolean;
-  isLiquiditySweep: boolean;
-  isPoiMitigated: boolean;
-};
-
-export type TradeFormData = {
-  pair: Pair;
-  type: "Long" | "Short";
-  openTime: string;
-  closeTime: string | null;
-  risk: number;
-  notes: string;
-  postNotes: string;
-  tierSetup: string;
-  preSetupImg: string[];
-  postSetupImg: string | null;
-  pnl: number | null;
-  setupCriteria: SetupCriteria;
-  accounts: string[];
-  pnl_in_usd: number | null;
-};
 
 type Props = {
   onClose: () => void;
@@ -64,7 +35,7 @@ const criteriaList: { key: keyof SetupCriteria; label: string }[] = [
   { key: "isPoiMitigated", label: "POI mitigated" },
 ];
 
-const PAIRS: Pair[] = ["EURUSD", "AUDUSD", "GBPUSD", "GBPAUD"];
+const PAIRS: Pair[] = ["EURUSD", "AUDUSD", "GBPUSD"];
 
 const getLocalDateString = () => {
   const now = new Date();

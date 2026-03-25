@@ -1,153 +1,19 @@
 "use client";
-import { ChevronRight, Funnel } from "lucide-react";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
 
-type SetupCriteriaTypes = {
-  isRefined: boolean;
-  isBelowOrAboveOpeningPrice: boolean;
-  isMssOccured: boolean;
-  isIFVG: boolean;
-  isFVG: boolean;
-  isDisplacement: boolean;
-  isLiquiditySweep: boolean;
-  isPoiMitigated: boolean;
-};
+import classNames from "classnames";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
+import { useTradeHistory } from "@/store/tradeHistory/useTradeHistory";
 
-type TradeTypes = {
-  pair: string | null;
-  isMaintenance: boolean; //if true, null the others
-  type: "Short" | "Long" | null;
-  openTime: string | null;
-  closeTime: string | "Open" | null;
-  tierSetup: "A+" | "A++" | null;
-  risk: number | null;
-  pnl: number | "Open" | null;
-  preSetupImg: string[] | null;
-  postSetupImg: string | null;
-  notes: string | null;
-  postNotes: string | null;
+const PAGE_SIZE = 8;
 
-  setupCriteria: SetupCriteriaTypes;
-};
-const trades: TradeTypes[] = [
-  {
-    pair: "EUR/USD",
-    isMaintenance: false,
-    type: "Short",
-    openTime: "2026-03-10 19:39",
-    closeTime: "2026-03-10 20:21",
-    tierSetup: "A++",
-    risk: 1,
-    pnl: 3.78,
-    preSetupImg: [
-      "https://www.tradingview.com/x/7keBknFY/",
-      "https://www.tradingview.com/x/7keBknFY/",
-    ],
-    postSetupImg: "https://www.tradingview.com/x/7keBknFY/",
-    postNotes: "Trade respected HTF resistance and reached TP cleanly.",
-    notes: "Liquidity sweep above London high then MSS and displacement.",
+const formatDateTime = (value?: string | null) => {
+  if (!value) return "—";
 
-    setupCriteria: {
-      isRefined: true,
-      isBelowOrAboveOpeningPrice: true,
-      isMssOccured: true,
-      isIFVG: true,
-      isFVG: true,
-      isDisplacement: true,
-      isLiquiditySweep: true,
-      isPoiMitigated: true,
-    },
-  },
-
-  {
-    pair: "GBP/USD",
-    isMaintenance: false,
-    type: "Long",
-    openTime: "2026-03-09 14:10",
-    closeTime: "2026-03-09 15:02",
-    tierSetup: "A+",
-    risk: 1,
-    pnl: 1.95,
-    preSetupImg: [
-      "https://www.tradingview.com/x/7keBknFY/",
-      "https://www.tradingview.com/x/7keBknFY/",
-    ],
-    postSetupImg: "https://www.tradingview.com/x/7keBknFY/",
-    postNotes: "Trade respected HTF resistance and reached TP cleanly.",
-    notes: "NY session breakout with displacement and FVG entry.",
-
-    setupCriteria: {
-      isRefined: false,
-      isBelowOrAboveOpeningPrice: true,
-      isMssOccured: true,
-      isIFVG: false,
-      isFVG: true,
-      isDisplacement: true,
-      isLiquiditySweep: false,
-      isPoiMitigated: true,
-    },
-  },
-
-  {
-    pair: "USD/JPY",
-    isMaintenance: false,
-    type: "Long",
-    openTime: "2026-03-10 07:12",
-    closeTime: "Open",
-    postNotes: "Trade respected HTF resistance and reached TP cleanly.",
-    tierSetup: "A++",
-    risk: 0.5,
-    pnl: "Open",
-    preSetupImg: [
-      "https://www.tradingview.com/x/7keBknFY/",
-      "https://www.tradingview.com/x/7keBknFY/",
-    ],
-    postSetupImg: null,
-    notes: "Asian session continuation with liquidity sweep.",
-
-    setupCriteria: {
-      isRefined: true,
-      isBelowOrAboveOpeningPrice: true,
-      isMssOccured: false,
-      isIFVG: true,
-      isFVG: false,
-      isDisplacement: true,
-      isLiquiditySweep: true,
-      isPoiMitigated: false,
-    },
-  },
-
-  {
-    pair: null,
-    isMaintenance: true,
-    type: null,
-    openTime: null,
-    closeTime: null,
-    postNotes: "Trade respected HTF resistance and reached TP cleanly.",
-    tierSetup: null,
-    risk: null,
-    pnl: null,
-    preSetupImg: [],
-    postSetupImg: null,
-    notes: null,
-
-    setupCriteria: {
-      isRefined: false,
-      isBelowOrAboveOpeningPrice: false,
-      isMssOccured: false,
-      isIFVG: false,
-      isFVG: false,
-      isDisplacement: false,
-      isLiquiditySweep: false,
-      isPoiMitigated: false,
-    },
-  },
-];
-const formatDateTime = (dateStr: string | null) => {
-  if (!dateStr) return "-";
-
-  const date = new Date(dateStr);
+  const date = new Date(value);
 
   return date.toLocaleString(undefined, {
     month: "short",
@@ -155,324 +21,504 @@ const formatDateTime = (dateStr: string | null) => {
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
-    hour12: true, // ito ang nagtatanggal ng military time
+    hour12: true,
   });
 };
-const getTradeDuration = (
-  open: string | null,
-  close: string | "Open" | null
+
+const formatTradeDuration = (
+  openTime?: string | null,
+  closeTime?: string | null
 ) => {
-  if (!open) return "-";
+  if (!openTime || !closeTime) return "—";
 
-  const openDate = new Date(open);
+  const start = new Date(openTime).getTime();
+  const end = new Date(closeTime).getTime();
 
-  let closeDate: Date;
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return "—";
 
-  if (close === "Open") {
-    closeDate = new Date();
-  } else if (close) {
-    closeDate = new Date(close);
-  } else {
-    return "-";
-  }
+  const totalMinutes = Math.round((end - start) / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
 
-  const diffMs = closeDate.getTime() - openDate.getTime();
-  const minutes = Math.floor(diffMs / 60000);
+  if (hours <= 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
 
-  if (minutes < 60) return `${minutes} min`;
-
-  const hours = Math.floor(minutes / 60);
-  const remainingMin = minutes % 60;
-
-  return `${hours}h ${remainingMin}m`;
+  return `${hours}h ${minutes}m`;
 };
+
+const formatR = (value?: number | null) => {
+  if (value === null || value === undefined) return "—";
+  return `${value > 0 ? "+" : ""}${value}R`;
+};
+
 const Journal = () => {
-  const [selectedTrade, setSelectedTrade] = useState<TradeTypes | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const { selectedTradeAcc } = useTradeAccount();
+  const { tradeHistory } = useTradeHistory();
+
+  const [search, setSearch] = useState("");
+  const [selectedTrade, setSelectedTrade] = useState<
+    (typeof tradeHistory)[number] | null
+  >(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
-  return (
-    <div>
-      <div className="flex justify-between border-b-2 border-white/10 pb-6">
-        <h5 className="text-2xl font-semibold">Trading Journal</h5>
-        <div className="flex gap-4">
-          <button className="text-xs bg-card px-4 rounded-md text-white/75 font-medium flex items-center gap-2">
-            <input type="checkbox" />
-            Profitable trades only
-          </button>
-          <button>
-            <Funnel />
+  const [profitableOnly, setProfitableOnly] = useState(true);
+
+  const currentPageParam = Number(searchParams.get("journalPage") || 0);
+  const currentPage = Number.isNaN(currentPageParam) ? 0 : currentPageParam;
+
+  const handleChangePage = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("journalPage", String(Math.max(0, page)));
+    router.push("?" + params.toString(), { scroll: false });
+  };
+
+  const filteredTrades = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return tradeHistory
+      .filter((trade) => trade.accounts.includes(selectedTradeAcc))
+      .filter((trade) => {
+        if (!profitableOnly) return true;
+        return (trade.pnl ?? 0) > 0;
+      })
+      .filter((trade) => {
+        if (!query) return true;
+
+        return [
+          trade.pair,
+          trade.type,
+          trade.tierSetup,
+          trade.notes,
+          trade.postNotes,
+        ]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.openTime).getTime() - new Date(a.openTime).getTime()
+      );
+  }, [tradeHistory, selectedTradeAcc, search, profitableOnly]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTrades.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(0, currentPage), totalPages - 1);
+
+  const paginatedTrades = useMemo(() => {
+    const startIndex = safePage * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE;
+    return filteredTrades.slice(startIndex, endIndex);
+  }, [filteredTrades, safePage]);
+
+  useEffect(() => {
+    if (currentPage !== safePage) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("journalPage", String(safePage));
+      router.replace("?" + params.toString(), { scroll: false });
+    }
+  }, [currentPage, safePage, router, searchParams]);
+
+  useEffect(() => {
+    const current = searchParams.get("journalPage");
+
+    if (current !== "0") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("journalPage", "0");
+      router.replace("?" + params.toString(), { scroll: false });
+    }
+  }, [selectedTradeAcc, profitableOnly]);
+  const tradeCount = filteredTrades.length;
+  const totalR = filteredTrades.reduce(
+    (sum, trade) => sum + (trade.pnl ?? 0),
+    0
+  );
+  const totalUsd = filteredTrades.reduce(
+    (sum, trade) => sum + (trade.pnl_in_usd ?? 0),
+    0
+  );
+
+  const modalContent = selectedTrade ? (
+    <div
+      className="fixed inset-0 z-[999] flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
+      onClick={() => setSelectedTrade(null)}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-card max-h-[90vh] w-[950px] space-y-8 overflow-y-auto rounded-2xl p-8 shadow-xl"
+      >
+        <div className="flex items-center justify-between border-b border-white/10 pb-4">
+          <div>
+            <h3 className="text-2xl font-semibold">{selectedTrade.pair}</h3>
+            <p className="text-xs text-white/50">Trade Details</p>
+          </div>
+
+          <span
+            className={`rounded-full px-4 py-1 text-sm font-medium ${
+              selectedTrade.type === "Short"
+                ? "bg-red-500/20 text-red-300"
+                : "bg-green-500/20 text-green-300"
+            }`}
+          >
+            {selectedTrade.type}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          {[
+            {
+              label: "Open Time",
+              value: formatDateTime(selectedTrade.openTime),
+            },
+            {
+              label: "Close Time",
+              value: formatDateTime(selectedTrade.closeTime),
+            },
+            {
+              label: "Duration",
+              value: formatTradeDuration(
+                selectedTrade.openTime,
+                selectedTrade.closeTime
+              ),
+            },
+            { label: "Risk", value: `${selectedTrade.risk}%` },
+            { label: "Tier Setup", value: selectedTrade.tierSetup },
+          ].map((item, i) => (
+            <div key={i} className="rounded-lg bg-white/5 p-4">
+              <p className="mb-1 text-xs text-white/50">{item.label}</p>
+              <p className="text-sm font-medium">{item.value || "-"}</p>
+            </div>
+          ))}
+
+          <div className="rounded-lg bg-white/5 p-4">
+            <p className="mb-1 text-xs text-white/50">PnL</p>
+            <p
+              className={`text-sm font-semibold ${
+                typeof selectedTrade.pnl === "number"
+                  ? selectedTrade.pnl > 0
+                    ? "text-green-400"
+                    : "text-red-400"
+                  : ""
+              }`}
+            >
+              {typeof selectedTrade.pnl === "number"
+                ? `${selectedTrade.pnl > 0 ? "+" : ""}${selectedTrade.pnl}R`
+                : selectedTrade.pnl}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="mb-4 text-lg font-semibold">Setup Criteria</h4>
+
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            {[
+              ["Refined entry", selectedTrade.setupCriteria.isRefined],
+              [
+                "Above / Below opening price",
+                selectedTrade.setupCriteria.isBelowOrAboveOpeningPrice,
+              ],
+              ["MSS occurred", selectedTrade.setupCriteria.isMssOccured],
+              ["IFVG", selectedTrade.setupCriteria.isIFVG],
+              ["FVG", selectedTrade.setupCriteria.isFVG],
+              ["Displacement", selectedTrade.setupCriteria.isDisplacement],
+              ["Liquidity sweep", selectedTrade.setupCriteria.isLiquiditySweep],
+              ["POI mitigated", selectedTrade.setupCriteria.isPoiMitigated],
+            ].map(([label, checked], i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
+                  checked ? "bg-green-500/10 text-green-300" : "bg-white/5"
+                }`}
+              >
+                <input type="checkbox" checked={checked as boolean} readOnly />
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {selectedTrade.preSetupImg && selectedTrade.preSetupImg.length > 0 && (
+          <div>
+            <h4 className="mb-4 text-lg font-semibold">Pre Setup</h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              {selectedTrade.preSetupImg.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Pre setup ${index + 1}`}
+                  className="cursor-zoom-in rounded-xl border border-white/10 transition hover:border-white/30"
+                  onClick={() => setPreviewImg(img)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {selectedTrade.notes && (
+          <div>
+            <h4 className="mb-2 text-lg font-semibold">Notes</h4>
+            <div className="rounded-lg bg-white/5 p-4 text-sm text-white/80">
+              {selectedTrade.notes}
+            </div>
+          </div>
+        )}
+
+        {selectedTrade.postSetupImg && (
+          <div>
+            <h4 className="mb-4 text-lg font-semibold">Post Setup</h4>
+
+            <img
+              src={selectedTrade.postSetupImg}
+              alt="Post setup"
+              className="cursor-zoom-in rounded-xl border border-white/10 transition hover:border-white/30"
+              onClick={() => setPreviewImg(selectedTrade.postSetupImg!)}
+            />
+          </div>
+        )}
+
+        {selectedTrade.postNotes && (
+          <div>
+            <h4 className="mb-2 text-lg font-semibold">Post Trade Notes</h4>
+            <div className="rounded-lg bg-white/5 p-4 text-sm text-white/80">
+              {selectedTrade.postNotes}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end border-t border-white/10 pt-6">
+          <button
+            onClick={() => setSelectedTrade(null)}
+            className="rounded-md bg-white/10 px-5 py-2 text-sm transition hover:bg-white/20"
+          >
+            Close
           </button>
         </div>
       </div>
-      <table className="w-full text-sm text-left border-separate border-spacing-y-2">
-        <thead className="text-white/60">
-          <tr>
-            <th className="px-4 py-2 font-medium">Symbol</th>
-            <th className="px-4 py-2 font-medium">Type</th>
-            <th className="px-4 py-2 font-medium">Duration</th>
+    </div>
+  ) : null;
 
-            <th className="px-4 py-2 font-medium">Tier Setup</th>
-            <th className="px-4 py-2 font-medium">Risk</th>
-            <th className="px-4 py-2 font-medium">PnL</th>
-          </tr>
-        </thead>
+  const previewContent = previewImg ? (
+    <div
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80"
+      onClick={() => setPreviewImg(null)}
+    >
+      <img
+        src={previewImg}
+        className="max-h-[90vh] max-w-[90vw] rounded-lg"
+        alt="Preview"
+      />
+    </div>
+  ) : null;
 
-        <tbody>
-          {trades.map((trade, i) => {
-            if (trade.isMaintenance) {
-              return (
-                <tr key={i} className="bg-yellow-500/10">
-                  <td
-                    colSpan={7}
-                    className="px-4 py-3 text-center text-yellow-400"
-                  >
-                    Trade Maintenance
-                  </td>
-                </tr>
-              );
-            }
-
-            return (
-              <tr
-                key={i}
-                onClick={() => setSelectedTrade(trade)}
-                className="bg-white/5 hover:bg-white/10 transition cursor-pointer"
-              >
-                <td className="px-4 py-3 font-medium">{trade.pair}</td>
-
-                <td
-                  className={`px-4 py-3 ${
-                    trade.type === "Short" ? "text-red-400" : "text-green-400"
-                  }`}
-                >
-                  {trade.type}
-                </td>
-
-                <td className="px-4 py-3 text-white/70">
-                  {getTradeDuration(trade.openTime, trade.closeTime)}
-                </td>
-                <td className="px-4 py-3">
-                  {trade.tierSetup && (
-                    <span className="px-2 py-1 text-xs rounded bg-blue-500/20 text-blue-300">
-                      {trade.tierSetup}
-                    </span>
-                  )}
-                </td>
-
-                <td className="px-4 py-3">
-                  {trade.risk ? `${trade.risk}%` : "-"}
-                </td>
-
-                <td
-                  className={`px-4 py-3 font-medium ${
-                    typeof trade.pnl === "number"
-                      ? trade.pnl > 0
-                        ? "text-green-400"
-                        : "text-red-400"
-                      : "text-white/60"
-                  }`}
-                >
-                  {typeof trade.pnl === "number"
-                    ? `+${trade.pnl}R`
-                    : trade.pnl ?? "-"}
-                </td>
-
-                <td className="px-4 py-3 text-center">
-                  <button className="text-white/50 hover:text-white transition">
-                    <ChevronRight size={18} />
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {previewImg && (
-        <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[60]"
-          onClick={() => setPreviewImg(null)}
-        >
-          <img
-            src={previewImg}
-            className="max-w-[90vw] max-h-[90vh] rounded-lg"
-          />
-        </div>
-      )}
-      {selectedTrade && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-6"
-          onClick={() => setSelectedTrade(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-card w-[950px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-8 space-y-8"
-          >
-            {/* HEADER */}
-            <div className="flex justify-between items-center border-b border-white/10 pb-4">
-              <div>
-                <h3 className="text-2xl font-semibold">{selectedTrade.pair}</h3>
-                <p className="text-xs text-white/50">Trade Details</p>
-              </div>
-
-              <span
-                className={`px-4 py-1 rounded-full text-sm font-medium ${
-                  selectedTrade.type === "Short"
-                    ? "bg-red-500/20 text-red-300"
-                    : "bg-green-500/20 text-green-300"
-                }`}
-              >
-                {selectedTrade.type}
+  return (
+    <>
+      <div className="flex flex-col gap-5 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-white backdrop-blur-xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/35">
+              Journal
+            </p>
+            <h2 className="mt-1 text-2xl font-semibold">Winning Trades</h2>
+            <p className="mt-1 text-sm text-white/45">
+              Showing trades for{" "}
+              <span className="font-medium text-white/70">
+                {selectedTradeAcc}
               </span>
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
+                Trades
+              </p>
+              <p className="mt-1 text-lg font-semibold">{tradeCount}</p>
             </div>
 
-            {/* TRADE INFO */}
-            <div className="grid grid-cols-3 gap-6">
-              {[
-                {
-                  label: "Open Time",
-                  value: formatDateTime(selectedTrade.openTime),
-                },
-                {
-                  label: "Close Time",
-                  value: formatDateTime(selectedTrade.closeTime),
-                },
-                {
-                  label: "Duration",
-                  value: getTradeDuration(
-                    selectedTrade.openTime,
-                    selectedTrade.closeTime
-                  ),
-                },
-                { label: "Risk", value: `${selectedTrade.risk}%` },
-                { label: "Tier Setup", value: selectedTrade.tierSetup },
-              ].map((item, i) => (
-                <div key={i} className="bg-white/5 rounded-lg p-4">
-                  <p className="text-xs text-white/50 mb-1">{item.label}</p>
-                  <p className="text-sm font-medium">{item.value}</p>
-                </div>
-              ))}
-
-              {/* PnL */}
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-xs text-white/50 mb-1">PnL</p>
-                <p
-                  className={`text-sm font-semibold ${
-                    typeof selectedTrade.pnl === "number"
-                      ? selectedTrade.pnl > 0
-                        ? "text-green-400"
-                        : "text-red-400"
-                      : ""
-                  }`}
-                >
-                  {typeof selectedTrade.pnl === "number"
-                    ? `+${selectedTrade.pnl}R`
-                    : selectedTrade.pnl}
-                </p>
-              </div>
-            </div>
-
-            {/* SETUP CRITERIA */}
-            <div>
-              <h4 className="text-lg font-semibold mb-4">Setup Criteria</h4>
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {[
-                  ["Refined entry", selectedTrade.setupCriteria.isRefined],
-                  [
-                    "Above / Below opening price",
-                    selectedTrade.setupCriteria.isBelowOrAboveOpeningPrice,
-                  ],
-                  ["MSS occurred", selectedTrade.setupCriteria.isMssOccured],
-                  ["IFVG", selectedTrade.setupCriteria.isIFVG],
-                  ["FVG", selectedTrade.setupCriteria.isFVG],
-                  ["Displacement", selectedTrade.setupCriteria.isDisplacement],
-                  [
-                    "Liquidity sweep",
-                    selectedTrade.setupCriteria.isLiquiditySweep,
-                  ],
-                  ["POI mitigated", selectedTrade.setupCriteria.isPoiMitigated],
-                ].map(([label, checked], i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
-                      checked ? "bg-green-500/10 text-green-300" : "bg-white/5"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={checked as boolean}
-                      readOnly
-                    />
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* PRE SETUP IMAGES */}
-            {selectedTrade.preSetupImg &&
-              selectedTrade.preSetupImg.length > 0 && (
-                <div>
-                  <h4 className="text-lg font-semibold mb-4">Pre Setup</h4>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {selectedTrade.preSetupImg.map((img, index) => (
-                      <img
-                        key={index}
-                        src={img}
-                        className="rounded-xl border border-white/10 hover:border-white/30 cursor-zoom-in transition"
-                        onClick={() => setPreviewImg(img)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            {/* NOTES */}
-            {selectedTrade.notes && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Notes</h4>
-                <div className="bg-white/5 rounded-lg p-4 text-sm text-white/80">
-                  {selectedTrade.notes}
-                </div>
-              </div>
-            )}
-
-            {/* POST SETUP */}
-            {selectedTrade.postSetupImg && (
-              <div>
-                <h4 className="text-lg font-semibold mb-4">Post Setup</h4>
-
-                <img
-                  src={selectedTrade.postSetupImg}
-                  className="rounded-xl border border-white/10 hover:border-white/30 cursor-zoom-in transition"
-                  onClick={() => setPreviewImg(selectedTrade.postSetupImg!)}
-                />
-              </div>
-            )}
-
-            {/* POST NOTES */}
-            {selectedTrade.postNotes && (
-              <div>
-                <h4 className="text-lg font-semibold mb-2">Post Trade Notes</h4>
-                <div className="bg-white/5 rounded-lg p-4 text-sm text-white/80">
-                  {selectedTrade.postNotes}
-                </div>
-              </div>
-            )}
-
-            {/* CLOSE BUTTON */}
-            <div className="flex justify-end pt-6 border-t border-white/10">
-              <button
-                onClick={() => setSelectedTrade(null)}
-                className="px-5 py-2 rounded-md bg-white/10 hover:bg-white/20 text-sm transition"
+            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
+                Net R
+              </p>
+              <p
+                className={classNames("mt-1 text-lg font-semibold", {
+                  "text-green-400": totalR >= 0,
+                  "text-red-400": totalR < 0,
+                })}
               >
-                Close
-              </button>
+                {totalR >= 0 ? "+" : ""}
+                {totalR.toFixed(2)}R
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
+                Net USD
+              </p>
+              <p
+                className={classNames("mt-1 text-lg font-semibold", {
+                  "text-green-400": totalUsd >= 0,
+                  "text-red-400": totalUsd < 0,
+                })}
+              >
+                {totalUsd >= 0 ? "+" : ""}
+                {totalUsd.toFixed(2)}
+              </p>
             </div>
           </div>
         </div>
-      )}
-    </div>
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 lg:w-[420px]">
+            <Search size={16} className="shrink-0 text-white/40" />
+            <input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                handleChangePage(0);
+              }}
+              placeholder="Search pair, setup, notes..."
+              className="w-full bg-transparent text-sm text-white outline-none placeholder:text-white/30"
+            />
+            {search && (
+              <button
+                onClick={() => {
+                  setSearch("");
+                  handleChangePage(0);
+                }}
+                className="text-white/35 transition hover:text-white/70"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          <button
+            onClick={() => setProfitableOnly((prev) => !prev)}
+            className="flex h-fit items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/75 transition hover:bg-white/[0.04]"
+          >
+            <input type="checkbox" checked={profitableOnly} readOnly />
+            Profitable trades only
+          </button>
+        </div>
+
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
+          <div className="grid grid-cols-[0.5fr_0.8fr_1.1fr_0.6fr_0.4fr_40px] gap-3 border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/35">
+            <p>Pair / Type</p>
+            <p>Opened</p>
+            <p>Setup</p>
+            <p>Duration</p>
+            <p>Result</p>
+            <p />
+          </div>
+
+          <div className="flex flex-col">
+            {paginatedTrades.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-white/40">
+                No trades found.
+              </div>
+            ) : (
+              paginatedTrades.map((trade) => (
+                <button
+                  key={trade.id}
+                  onClick={() => setSelectedTrade(trade)}
+                  className="grid cursor-pointer grid-cols-[0.5fr_0.8fr_1.1fr_0.6fr_0.4fr_40px] gap-3 border-b border-white/5 px-4 py-4 text-left transition hover:bg-white/[0.03]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {trade.pair || "—"}
+                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span
+                        className={classNames(
+                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          trade.type === "Short"
+                            ? "bg-red-500/15 text-red-300"
+                            : "bg-green-500/15 text-green-300"
+                        )}
+                      >
+                        {trade.type || "—"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-white/70">
+                    {formatDateTime(trade.openTime)}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-white/80">
+                      {trade.tierSetup || "—"}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-white/35">
+                      {trade.notes || "No notes"}
+                    </p>
+                  </div>
+
+                  <div className="text-sm text-white/70">
+                    {formatTradeDuration(trade.openTime, trade.closeTime)}
+                  </div>
+
+                  <div>
+                    <p
+                      className={classNames("text-sm font-semibold", {
+                        "text-green-400": (trade.pnl ?? 0) >= 0,
+                        "text-red-400": (trade.pnl ?? 0) < 0,
+                      })}
+                    >
+                      {formatR(trade.pnl)}
+                    </p>
+                    <p
+                      className={classNames("mt-1 text-xs", {
+                        "text-white/35": (trade.pnl_in_usd ?? 0) >= 0,
+                        "text-red-300/70": (trade.pnl_in_usd ?? 0) < 0,
+                      })}
+                    >
+                      {(trade.pnl_in_usd ?? 0) >= 0 ? "+" : ""}
+                      {(trade.pnl_in_usd ?? 0).toFixed(2)} USD
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-end text-white/30">
+                    <ChevronRight size={16} />
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+
+        {filteredTrades.length > PAGE_SIZE && (
+          <div className="flex items-center justify-center gap-[1vw] pt-2">
+            <button
+              disabled={safePage === 0}
+              className="cursor-pointer opacity-80 disabled:opacity-25"
+              onClick={() => handleChangePage(safePage - 1)}
+            >
+              <ChevronLeft size={25} />
+            </button>
+
+            <div className="flex items-center gap-[0.4vw]">
+              <p className="text-xs font-medium opacity-75">
+                Page {safePage + 1} of {totalPages}
+              </p>
+            </div>
+
+            <button
+              onClick={() => handleChangePage(safePage + 1)}
+              disabled={safePage === totalPages - 1}
+              className="cursor-pointer opacity-80 disabled:opacity-25"
+            >
+              <ChevronRight size={25} />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {previewContent ? createPortal(previewContent, document.body) : null}
+      {modalContent ? createPortal(modalContent, document.body) : null}
+    </>
   );
 };
 
