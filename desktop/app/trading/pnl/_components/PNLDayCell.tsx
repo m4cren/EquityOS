@@ -1,8 +1,8 @@
 import { Day } from "@/hooks/useCalendar";
+import { TradeFormData } from "@/lib/types";
 import classNames from "classnames";
 import { Plus } from "lucide-react";
 import React from "react";
-import type { TradeFormData } from "./LogTrade";
 
 type TradeItem = TradeFormData & { id: string };
 

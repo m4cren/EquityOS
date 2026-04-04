@@ -1,7 +1,8 @@
 import React from "react";
+import System from "./_components/System";
 
 const page = () => {
-  return <div></div>;
+  return <System />;
 };
 
 export default page;

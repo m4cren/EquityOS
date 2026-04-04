@@ -1,8 +1,9 @@
 "use client";
 
-import { Pair, SetupCriteria, TradeFormData } from "@/lib/types";
+import { SystemCriterion, TradeFormData } from "@/lib/types";
 import { Calendar, Clock } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTradingSystem } from "@/store/tradingSystem/useTradingSystem";
 
 const ACCOUNTS_STATIC = ["m4cren", "Funded_m4cren"] as const;
 
@@ -12,30 +13,6 @@ type Props = {
   selectedDate: string | null;
   existingTrade?: (TradeFormData & { id: string }) | null;
 };
-
-const defaultCriteria: SetupCriteria = {
-  isRefined: false,
-  isBelowOrAboveOpeningPrice: false,
-  isMssOccured: false,
-  isIFVG: false,
-  isFVG: false,
-  isDisplacement: false,
-  isLiquiditySweep: false,
-  isPoiMitigated: false,
-};
-
-const criteriaList: { key: keyof SetupCriteria; label: string }[] = [
-  { key: "isRefined", label: "Refined entry" },
-  { key: "isBelowOrAboveOpeningPrice", label: "Above / Below opening price" },
-  { key: "isMssOccured", label: "MSS occurred" },
-  { key: "isIFVG", label: "IFVG" },
-  { key: "isFVG", label: "FVG" },
-  { key: "isDisplacement", label: "Displacement" },
-  { key: "isLiquiditySweep", label: "Liquidity sweep" },
-  { key: "isPoiMitigated", label: "POI mitigated" },
-];
-
-const PAIRS: Pair[] = ["EURUSD", "AUDUSD", "GBPUSD"];
 
 const getLocalDateString = () => {
   const now = new Date();
@@ -102,24 +79,56 @@ const createDefaultTrade = (selectedDate?: string | null): TradeFormData => ({
   preSetupImg: [],
   postSetupImg: null,
   pnl: null,
-  setupCriteria: { ...defaultCriteria },
+  setupCriteria: [],
   accounts: [],
-  pnl_in_usd: 0,
+  pnl_in_usd: null,
 });
+const normalizeSetupCriteria = (
+  setupCriteria:
+    | TradeFormData["setupCriteria"]
+    | Record<string, boolean>
+    | undefined,
+  criteriaList: SystemCriterion[]
+): SystemCriterion[] => {
+  if (!setupCriteria) return [];
 
-export default function TradeJournalModal({
+  if (Array.isArray(setupCriteria)) {
+    return setupCriteria;
+  }
+
+  return criteriaList.filter((criterion) => setupCriteria[criterion.id]);
+};
+export default function LogTrade({
   onClose,
   onSave,
   selectedDate,
   existingTrade,
 }: Props) {
+  const { tradingSystem } = useTradingSystem();
+
+  const criteriaList = tradingSystem?.criteria || [];
+  const pairs = tradingSystem?.pairs || [];
+
+  const requiredCriteria = useMemo(
+    () => criteriaList.filter((item) => item.required),
+    [criteriaList]
+  );
   const [trade, setTrade] = useState<TradeFormData>(() =>
     existingTrade
       ? {
           ...existingTrade,
-          preSetupImg: [...existingTrade.preSetupImg],
-          setupCriteria: { ...existingTrade.setupCriteria },
-          accounts: [...existingTrade.accounts],
+          preSetupImg: Array.isArray(existingTrade.preSetupImg)
+            ? [...existingTrade.preSetupImg]
+            : [],
+          setupCriteria: normalizeSetupCriteria(
+            existingTrade.setupCriteria as
+              | TradeFormData["setupCriteria"]
+              | Record<string, boolean>,
+            criteriaList
+          ),
+          accounts: Array.isArray(existingTrade.accounts)
+            ? [...existingTrade.accounts]
+            : [],
         }
       : createDefaultTrade(selectedDate)
   );
@@ -130,21 +139,30 @@ export default function TradeJournalModal({
     existingTrade?.postSetupImg || ""
   );
 
-  const checkedCount = useMemo(() => {
-    return Object.values(trade.setupCriteria).filter(Boolean).length;
+  const selectedCriteriaIds = useMemo(() => {
+    return new Set(trade.setupCriteria.map((item) => item.id));
   }, [trade.setupCriteria]);
 
+  const checkedCount = useMemo(() => {
+    return criteriaList.filter((item) => selectedCriteriaIds.has(item.id))
+      .length;
+  }, [criteriaList, selectedCriteriaIds]);
+
   const missingCount = useMemo(() => {
-    return criteriaList.length - checkedCount;
-  }, [checkedCount]);
+    return requiredCriteria.filter((item) => !selectedCriteriaIds.has(item.id))
+      .length;
+  }, [requiredCriteria, selectedCriteriaIds]);
 
   const setupGrade = useMemo(() => {
-    if (missingCount === 0) return "A++";
-    if (missingCount === 1) return "A";
+    if (criteriaList.length === 0) return "N/A";
+    if (missingCount === 0) return "A+";
     return "Invalid";
-  }, [missingCount]);
+  }, [criteriaList.length, missingCount]);
 
-  const canPassSetup = missingCount <= 1;
+  const canPassSetup = useMemo(() => {
+    if (requiredCriteria.length === 0) return true;
+    return requiredCriteria.every((item) => selectedCriteriaIds.has(item.id));
+  }, [requiredCriteria, selectedCriteriaIds]);
 
   const isExistingTrade = !!existingTrade;
   const isClosedTrade = !!trade.closeTime;
@@ -158,16 +176,25 @@ export default function TradeJournalModal({
   const effectiveCloseTime =
     trade.closeTime || (shouldShowCloseSection ? getNowLocalDateTime() : null);
 
-  const handleCriteriaChange = (key: keyof SetupCriteria) => {
+  const isCriterionChecked = (criterionId: string) => {
+    return selectedCriteriaIds.has(criterionId);
+  };
+
+  const handleCriteriaChange = (criterion: SystemCriterion) => {
     if (shouldLockEntryFields) return;
 
-    setTrade((prev) => ({
-      ...prev,
-      setupCriteria: {
-        ...prev.setupCriteria,
-        [key]: !prev.setupCriteria[key],
-      },
-    }));
+    setTrade((prev) => {
+      const exists = prev.setupCriteria.some(
+        (item) => item.id === criterion.id
+      );
+
+      return {
+        ...prev,
+        setupCriteria: exists
+          ? prev.setupCriteria.filter((item) => item.id !== criterion.id)
+          : [...prev.setupCriteria, criterion],
+      };
+    });
   };
 
   const handleAccountToggle = (account: string) => {
@@ -227,6 +254,7 @@ export default function TradeJournalModal({
 
     const url = postImgInput.trim();
     if (!url) return;
+
     handleInputChange("postSetupImg", url);
   };
 
@@ -266,19 +294,28 @@ export default function TradeJournalModal({
   const validateTrade = () => {
     const nextErrors: string[] = [];
 
+    if (!tradingSystem) {
+      nextErrors.push("No active trading system found.");
+    }
+
     if (trade.accounts.length === 0) {
       nextErrors.push("At least one account is required.");
     }
-    if (!trade.pair.trim()) nextErrors.push("Pair is required.");
-    if (!trade.openTime) nextErrors.push("Open time is required.");
+
+    if (!trade.pair.trim()) {
+      nextErrors.push("Pair is required.");
+    }
+
+    if (!trade.openTime) {
+      nextErrors.push("Open time is required.");
+    }
+
     if (!trade.risk || trade.risk <= 0) {
       nextErrors.push("Risk must be greater than 0.");
     }
 
     if (!canPassSetup) {
-      nextErrors.push(
-        "At least 7 of 8 setup criteria must be met. Two missing criteria is not allowed."
-      );
+      nextErrors.push("All required setup criteria must be completed.");
     }
 
     if (shouldShowCloseSection) {
@@ -287,12 +324,15 @@ export default function TradeJournalModal({
       if (!closeTimeToUse) {
         nextErrors.push("Closing time is required to close the trade.");
       }
+
       if (trade.pnl === null) {
         nextErrors.push("PnL is required to close the trade.");
       }
+
       if (!trade.postNotes.trim()) {
         nextErrors.push("Post analysis is required to close the trade.");
       }
+
       if (!trade.postSetupImg) {
         nextErrors.push("Post setup image is required to close the trade.");
       }
@@ -317,9 +357,18 @@ export default function TradeJournalModal({
     const nextTrade = existingTrade
       ? {
           ...existingTrade,
-          preSetupImg: [...existingTrade.preSetupImg],
-          setupCriteria: { ...existingTrade.setupCriteria },
-          accounts: [...existingTrade.accounts],
+          preSetupImg: Array.isArray(existingTrade.preSetupImg)
+            ? [...existingTrade.preSetupImg]
+            : [],
+          setupCriteria: normalizeSetupCriteria(
+            existingTrade.setupCriteria as
+              | TradeFormData["setupCriteria"]
+              | Record<string, boolean>,
+            criteriaList
+          ),
+          accounts: Array.isArray(existingTrade.accounts)
+            ? [...existingTrade.accounts]
+            : [],
         }
       : createDefaultTrade(selectedDate);
 
@@ -346,12 +395,12 @@ export default function TradeJournalModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-card w-full max-w-[950px] max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl p-8 space-y-8"
+        className="bg-card max-h-[90vh] w-full max-w-[950px] overflow-y-auto rounded-2xl p-8 shadow-xl space-y-8"
       >
         <div className="flex items-center justify-between border-b border-white/10 pb-4">
           <div>
@@ -361,6 +410,14 @@ export default function TradeJournalModal({
             <p className="text-sm text-white/50">
               Save open trades or record completed trades with post analysis.
             </p>
+            {tradingSystem?.name && (
+              <p className="mt-1 text-xs text-white/40">
+                Active system:{" "}
+                <span className="font-medium text-white/70">
+                  {tradingSystem.name}
+                </span>
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
@@ -368,11 +425,11 @@ export default function TradeJournalModal({
               Setup Grade:{" "}
               <span
                 className={
-                  setupGrade === "A++"
+                  setupGrade === "A+"
                     ? "text-green-400"
-                    : setupGrade === "A"
-                    ? "text-yellow-400"
-                    : "text-red-400"
+                    : setupGrade === "Invalid"
+                    ? "text-red-400"
+                    : "text-white/70"
                 }
               >
                 {setupGrade}
@@ -456,7 +513,9 @@ export default function TradeJournalModal({
 
                 <div className="rounded-lg bg-black/20 p-3">
                   <p className="mb-1 text-xs text-white/50">PnL in USD</p>
-                  <p className="text-sm text-white">{trade.pnl_in_usd}</p>
+                  <p className="text-sm text-white">
+                    {trade.pnl_in_usd ?? "—"}
+                  </p>
                 </div>
               </div>
 
@@ -484,7 +543,7 @@ export default function TradeJournalModal({
                   <h3 className="mb-2 text-lg font-semibold">
                     Pre-Trade Notes
                   </h3>
-                  <div className="rounded-lg border border-white/10 bg-black/20 p-4 text-sm whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap rounded-lg border border-white/10 bg-black/20 p-4 text-sm">
                     {trade.notes}
                   </div>
                 </div>
@@ -506,7 +565,7 @@ export default function TradeJournalModal({
               {!!trade.postNotes.trim() && (
                 <div>
                   <h3 className="mb-2 text-lg font-semibold">Post Analysis</h3>
-                  <div className="rounded-lg border border-white/10 bg-black/20 p-4 text-sm whitespace-pre-wrap">
+                  <div className="whitespace-pre-wrap rounded-lg border border-white/10 bg-black/20 p-4 text-sm">
                     {trade.postNotes}
                   </div>
                 </div>
@@ -525,7 +584,7 @@ export default function TradeJournalModal({
               return (
                 <label
                   key={account}
-                  className={`flex items-center gap-3 rounded-lg px-4 py-3 border transition ${
+                  className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition ${
                     checked
                       ? "border-green-500/30 bg-green-500/10 text-green-300"
                       : "border-white/10 bg-white/5"
@@ -567,15 +626,13 @@ export default function TradeJournalModal({
             <select
               value={trade.pair}
               disabled={shouldLockEntryFields}
-              onChange={(e) =>
-                handleInputChange("pair", e.target.value as Pair)
-              }
-              className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              onChange={(e) => handleInputChange("pair", e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="" className="bg-neutral-900 text-white/50">
                 Select pair
               </option>
-              {PAIRS.map((pair) => (
+              {pairs.map((pair) => (
                 <option key={pair} value={pair} className="bg-neutral-900">
                   {pair}
                 </option>
@@ -591,7 +648,7 @@ export default function TradeJournalModal({
               onChange={(e) =>
                 handleInputChange("type", e.target.value as "Long" | "Short")
               }
-              className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="Long" className="bg-neutral-900">
                 Long
@@ -612,7 +669,7 @@ export default function TradeJournalModal({
               onChange={(e) =>
                 handleInputChange("risk", Number(e.target.value))
               }
-              className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none disabled:cursor-not-allowed disabled:opacity-60"
               placeholder="1"
             />
           </div>
@@ -635,7 +692,7 @@ export default function TradeJournalModal({
                       trade.openTime?.split("T")[1]?.slice(0, 5) || "00:00";
                     handleInputChange("openTime", `${date}T${time}`);
                   }}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-white/30 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-10 pr-4 outline-none transition focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
 
@@ -653,7 +710,7 @@ export default function TradeJournalModal({
                     const date = trade.openTime?.split("T")[0] || "";
                     handleInputChange("openTime", `${date}T${time}`);
                   }}
-                  className="w-full pl-10 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-white/30 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-10 pr-4 outline-none transition focus:border-white/30 disabled:cursor-not-allowed disabled:opacity-60"
                 />
               </div>
             </div>
@@ -662,44 +719,65 @@ export default function TradeJournalModal({
 
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Setup Criteria</h3>
+            <h3 className="text-lg font-semibold">
+              Setup Criteria
+              {tradingSystem?.name ? (
+                <span className="ml-2 text-sm font-normal text-white/45">
+                  ({tradingSystem.name})
+                </span>
+              ) : null}
+            </h3>
+
             <p className="text-sm text-white/60">
               Checked: {checkedCount}/{criteriaList.length} · Missing:{" "}
               {missingCount}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {criteriaList.map((item) => {
-              const checked = trade.setupCriteria[item.key];
+          {criteriaList.length === 0 ? (
+            <div className="rounded-xl border border-yellow-500/20 bg-yellow-500/10 p-4 text-sm text-yellow-200">
+              No criteria found in your active system.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {criteriaList.map((item) => {
+                const checked = isCriterionChecked(item.id);
 
-              return (
-                <label
-                  key={item.key}
-                  className={`flex items-center gap-3 rounded-lg px-4 py-3 transition ${
-                    checked ? "bg-green-500/10 text-green-300" : "bg-white/5"
-                  } ${
-                    shouldLockEntryFields
-                      ? "cursor-not-allowed opacity-70"
-                      : "cursor-pointer"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={shouldLockEntryFields}
-                    onChange={() => handleCriteriaChange(item.key)}
-                  />
-                  <span>{item.label}</span>
-                </label>
-              );
-            })}
-          </div>
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex items-center gap-3 rounded-lg px-4 py-3 transition ${
+                      checked ? "bg-green-500/10 text-green-300" : "bg-white/5"
+                    } ${
+                      shouldLockEntryFields
+                        ? "cursor-not-allowed opacity-70"
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={shouldLockEntryFields}
+                      onChange={() => handleCriteriaChange(item)}
+                    />
+                    <div className="flex flex-col">
+                      <span>{item.label}</span>
+                      {item.required && (
+                        <span className="text-[11px] text-white/40">
+                          Required
+                        </span>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
 
-          {!canPassSetup && (
+          {!canPassSetup && criteriaList.length > 0 && (
             <p className="mt-3 text-sm text-red-400">
-              You cannot save this trade yet. Two or more setup criteria are
-              missing.
+              You cannot save this trade yet. All required setup criteria must
+              be completed.
             </p>
           )}
         </div>
@@ -748,7 +826,7 @@ export default function TradeJournalModal({
                         <button
                           type="button"
                           onClick={() => removePreImage(index)}
-                          className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+                          className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-xs text-white"
                         >
                           Remove
                         </button>
@@ -766,7 +844,7 @@ export default function TradeJournalModal({
                 value={trade.notes}
                 readOnly={shouldLockEntryFields}
                 onChange={(e) => handleInputChange("notes", e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 p-4 outline-none read-only:opacity-60 read-only:cursor-not-allowed"
+                className="w-full rounded-lg border border-white/10 bg-white/5 p-4 outline-none read-only:cursor-not-allowed read-only:opacity-60"
                 placeholder="Pre-trade reasoning, market context, bias..."
               />
             </div>
@@ -788,7 +866,7 @@ export default function TradeJournalModal({
                       effectiveCloseTime?.split("T")[1]?.slice(0, 5) || "00:00";
                     handleInputChange("closeTime", `${date}T${time}`);
                   }}
-                  className="w-full pl-4 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-4 pr-4 outline-none"
                 />
               </div>
 
@@ -803,7 +881,7 @@ export default function TradeJournalModal({
                       trade.openTime.split("T")[0];
                     handleInputChange("closeTime", `${date}T${time}`);
                   }}
-                  className="w-full pl-4 pr-4 py-3 rounded-lg bg-white/5 border border-white/10 outline-none"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-4 pr-4 outline-none"
                 />
               </div>
             </div>
@@ -839,7 +917,7 @@ export default function TradeJournalModal({
             </div>
 
             {trade.postSetupImg && (
-              <div className="mt-4 relative">
+              <div className="relative mt-4">
                 <img
                   src={trade.postSetupImg}
                   alt="Post setup"
@@ -848,7 +926,7 @@ export default function TradeJournalModal({
                 <button
                   type="button"
                   onClick={removePostImage}
-                  className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded"
+                  className="absolute right-2 top-2 rounded bg-black/70 px-2 py-1 text-xs text-white"
                 >
                   Remove
                 </button>
@@ -884,7 +962,7 @@ export default function TradeJournalModal({
                     e.target.value === "" ? null : Number(e.target.value)
                   )
                 }
-                className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
                 placeholder="e.g. 1.50 or -0.75"
               />
             </div>
@@ -901,7 +979,7 @@ export default function TradeJournalModal({
                     e.target.value === "" ? null : Number(e.target.value)
                   )
                 }
-                className="w-full rounded-lg bg-white/5 px-4 py-3 outline-none border border-white/10"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
                 placeholder="e.g. 125.50 or -75"
               />
             </div>
@@ -926,7 +1004,7 @@ export default function TradeJournalModal({
             disabled={isClosedTrade}
             className={`rounded-md px-5 py-2 text-sm transition ${
               isClosedTrade
-                ? "bg-white/10 text-white/40 cursor-not-allowed"
+                ? "cursor-not-allowed bg-white/10 text-white/40"
                 : "bg-white/10 hover:bg-white/20"
             }`}
           >
@@ -939,7 +1017,7 @@ export default function TradeJournalModal({
             disabled={isSaveDisabled}
             className={`rounded-md px-5 py-2 text-sm transition ${
               isSaveDisabled
-                ? "bg-white/20 text-white/40 cursor-not-allowed"
+                ? "cursor-not-allowed bg-white/20 text-white/40"
                 : "bg-white text-black hover:bg-white/90"
             }`}
           >

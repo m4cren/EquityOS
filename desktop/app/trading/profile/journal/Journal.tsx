@@ -1,19 +1,39 @@
 "use client";
 
 import classNames from "classnames";
-import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  X,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { SystemCriterion } from "@/lib/types";
 import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
 import { useTradeHistory } from "@/store/tradeHistory/useTradeHistory";
+import { useTradingSystem } from "@/store/tradingSystem/useTradingSystem";
 
 const PAGE_SIZE = 8;
+
+const LEGACY_CRITERIA_LABELS: Record<string, string> = {
+  isRefined: "Refined entry",
+  isBelowOrAboveOpeningPrice: "Above / Below opening price",
+  isMssOccured: "MSS occurred",
+  isIFVG: "IFVG",
+  isFVG: "FVG",
+  isDisplacement: "Displacement",
+  isLiquiditySweep: "Liquidity sweep",
+  isPoiMitigated: "POI mitigated",
+};
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
 
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
 
   return date.toLocaleString(undefined, {
     month: "short",
@@ -51,12 +71,65 @@ const formatR = (value?: number | null) => {
   return `${value > 0 ? "+" : ""}${value}R`;
 };
 
+const isSystemCriterionArray = (value: unknown): value is SystemCriterion[] => {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (item) =>
+        item &&
+        typeof item === "object" &&
+        "id" in item &&
+        "label" in item &&
+        typeof (item as SystemCriterion).id === "string" &&
+        typeof (item as SystemCriterion).label === "string"
+    )
+  );
+};
+
+const normalizeSetupCriteria = (
+  setupCriteria: unknown,
+  activeCriteria: SystemCriterion[]
+): SystemCriterion[] => {
+  if (!setupCriteria) return [];
+
+  if (isSystemCriterionArray(setupCriteria)) {
+    return setupCriteria;
+  }
+
+  if (typeof setupCriteria === "object" && !Array.isArray(setupCriteria)) {
+    const record = setupCriteria as Record<string, boolean>;
+    const activeCriteriaMap = new Map(
+      activeCriteria.map((item) => [item.id, item])
+    );
+
+    return Object.entries(record)
+      .filter(([, checked]) => Boolean(checked))
+      .map(([key]) => {
+        const activeMatch = activeCriteriaMap.get(key);
+
+        if (activeMatch) return activeMatch;
+
+        return {
+          id: key,
+          label: LEGACY_CRITERIA_LABELS[key] || key,
+          required: false,
+        };
+      });
+  }
+
+  return [];
+};
+
+type SortOrder = "desc" | "asc";
+type DatePreset = "all" | "today" | "7d" | "30d" | "custom";
+
 const Journal = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const { selectedTradeAcc } = useTradeAccount();
   const { tradeHistory } = useTradeHistory();
+  const { tradingSystem } = useTradingSystem();
 
   const [search, setSearch] = useState("");
   const [selectedTrade, setSelectedTrade] = useState<
@@ -64,6 +137,11 @@ const Journal = () => {
   >(null);
   const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [profitableOnly, setProfitableOnly] = useState(true);
+
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const currentPageParam = Number(searchParams.get("journalPage") || 0);
   const currentPage = Number.isNaN(currentPageParam) ? 0 : currentPageParam;
@@ -77,8 +155,25 @@ const Journal = () => {
   const filteredTrades = useMemo(() => {
     const query = search.trim().toLowerCase();
 
+    const now = new Date();
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    ).getTime();
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(now.getDate() - 7);
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(now.getDate() - 30);
+
     return tradeHistory
-      .filter((trade) => trade.accounts.includes(selectedTradeAcc))
+      .filter(
+        (trade) =>
+          Array.isArray(trade.accounts) &&
+          trade.accounts.includes(selectedTradeAcc)
+      )
       .filter((trade) => {
         if (!profitableOnly) return true;
         return (trade.pnl ?? 0) > 0;
@@ -96,11 +191,56 @@ const Journal = () => {
           .filter(Boolean)
           .some((value) => String(value).toLowerCase().includes(query));
       })
-      .sort(
-        (a, b) =>
-          new Date(b.openTime).getTime() - new Date(a.openTime).getTime()
-      );
-  }, [tradeHistory, selectedTradeAcc, search, profitableOnly]);
+      .filter((trade) => {
+        if (!trade.openTime) return false;
+
+        const tradeTime = new Date(trade.openTime).getTime();
+
+        if (Number.isNaN(tradeTime)) return false;
+
+        if (datePreset === "today") {
+          return tradeTime >= todayStart;
+        }
+
+        if (datePreset === "7d") {
+          return tradeTime >= sevenDaysAgo.getTime();
+        }
+
+        if (datePreset === "30d") {
+          return tradeTime >= thirtyDaysAgo.getTime();
+        }
+
+        if (datePreset === "custom") {
+          const start = fromDate
+            ? new Date(`${fromDate}T00:00:00`).getTime()
+            : null;
+          const end = toDate
+            ? new Date(`${toDate}T23:59:59.999`).getTime()
+            : null;
+
+          if (start !== null && tradeTime < start) return false;
+          if (end !== null && tradeTime > end) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        const aTime = new Date(a.openTime).getTime();
+        const bTime = new Date(b.openTime).getTime();
+
+        if (sortOrder === "asc") return aTime - bTime;
+        return bTime - aTime;
+      });
+  }, [
+    tradeHistory,
+    selectedTradeAcc,
+    search,
+    profitableOnly,
+    sortOrder,
+    datePreset,
+    fromDate,
+    toDate,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTrades.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(0, currentPage), totalPages - 1);
@@ -127,7 +267,17 @@ const Journal = () => {
       params.set("journalPage", "0");
       router.replace("?" + params.toString(), { scroll: false });
     }
-  }, [selectedTradeAcc, profitableOnly]);
+  }, [
+    selectedTradeAcc,
+    profitableOnly,
+    sortOrder,
+    datePreset,
+    fromDate,
+    toDate,
+    router,
+    searchParams,
+  ]);
+
   const tradeCount = filteredTrades.length;
   const totalR = filteredTrades.reduce(
     (sum, trade) => sum + (trade.pnl ?? 0),
@@ -137,6 +287,14 @@ const Journal = () => {
     (sum, trade) => sum + (trade.pnl_in_usd ?? 0),
     0
   );
+
+  const selectedTradeCriteria = useMemo(() => {
+    if (!selectedTrade) return [];
+    return normalizeSetupCriteria(
+      selectedTrade.setupCriteria,
+      tradingSystem?.criteria || []
+    );
+  }, [selectedTrade, tradingSystem?.criteria]);
 
   const modalContent = selectedTrade ? (
     <div
@@ -211,31 +369,23 @@ const Journal = () => {
         <div>
           <h4 className="mb-4 text-lg font-semibold">Setup Criteria</h4>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            {[
-              ["Refined entry", selectedTrade.setupCriteria.isRefined],
-              [
-                "Above / Below opening price",
-                selectedTrade.setupCriteria.isBelowOrAboveOpeningPrice,
-              ],
-              ["MSS occurred", selectedTrade.setupCriteria.isMssOccured],
-              ["IFVG", selectedTrade.setupCriteria.isIFVG],
-              ["FVG", selectedTrade.setupCriteria.isFVG],
-              ["Displacement", selectedTrade.setupCriteria.isDisplacement],
-              ["Liquidity sweep", selectedTrade.setupCriteria.isLiquiditySweep],
-              ["POI mitigated", selectedTrade.setupCriteria.isPoiMitigated],
-            ].map(([label, checked], i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 ${
-                  checked ? "bg-green-500/10 text-green-300" : "bg-white/5"
-                }`}
-              >
-                <input type="checkbox" checked={checked as boolean} readOnly />
-                {label}
-              </div>
-            ))}
-          </div>
+          {selectedTradeCriteria.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              {selectedTradeCriteria.map((criterion) => (
+                <div
+                  key={criterion.id}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 bg-green-500/10 text-green-300"
+                >
+                  <input type="checkbox" checked readOnly />
+                  {criterion.label}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg bg-white/5 p-4 text-sm text-white/60">
+              No setup criteria recorded.
+            </div>
+          )}
         </div>
 
         {selectedTrade.preSetupImg && selectedTrade.preSetupImg.length > 0 && (
@@ -273,7 +423,7 @@ const Journal = () => {
               src={selectedTrade.postSetupImg}
               alt="Post setup"
               className="cursor-zoom-in rounded-xl border border-white/10 transition hover:border-white/30"
-              onClick={() => setPreviewImg(selectedTrade.postSetupImg!)}
+              onClick={() => setPreviewImg(selectedTrade.postSetupImg)}
             />
           </div>
         )}
@@ -320,7 +470,7 @@ const Journal = () => {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/35">
               Journal
             </p>
-            <h2 className="mt-1 text-2xl font-semibold">Winning Trades</h2>
+            <h2 className="mt-1 text-2xl font-semibold">Trade History</h2>
             <p className="mt-1 text-sm text-white/45">
               Showing trades for{" "}
               <span className="font-medium text-white/70">
@@ -329,7 +479,7 @@ const Journal = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="flex items-center gap-3">
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
                 Trades
@@ -339,7 +489,7 @@ const Journal = () => {
 
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
-                Net R
+                Total R
               </p>
               <p
                 className={classNames("mt-1 text-lg font-semibold", {
@@ -348,13 +498,13 @@ const Journal = () => {
                 })}
               >
                 {totalR >= 0 ? "+" : ""}
-                {totalR.toFixed(2)}R
+                {totalR}R
               </p>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-black/20 px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
-                Net USD
+                Total USD
               </p>
               <p
                 className={classNames("mt-1 text-lg font-semibold", {
@@ -369,8 +519,8 @@ const Journal = () => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 lg:w-[420px]">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/20 px-4 py-3 xl:w-[420px]">
             <Search size={16} className="shrink-0 text-white/40" />
             <input
               value={search}
@@ -394,14 +544,105 @@ const Journal = () => {
             )}
           </div>
 
-          <button
-            onClick={() => setProfitableOnly((prev) => !prev)}
-            className="flex h-fit items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/75 transition hover:bg-white/[0.04]"
-          >
-            <input type="checkbox" checked={profitableOnly} readOnly />
-            Profitable trades only
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => setProfitableOnly((prev) => !prev)}
+              className="flex h-fit items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white/75 transition hover:bg-white/[0.04]"
+            >
+              <input type="checkbox" checked={profitableOnly} readOnly />
+              Profitable trades only
+            </button>
+
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
+              <span className="text-xs text-white/40">Sort</span>
+              <select
+                value={sortOrder}
+                onChange={(e) => {
+                  setSortOrder(e.target.value as SortOrder);
+                  handleChangePage(0);
+                }}
+                className="bg-transparent text-sm text-white outline-none"
+              >
+                <option value="desc" className="bg-[#111]">
+                  Newest first
+                </option>
+                <option value="asc" className="bg-[#111]">
+                  Oldest first
+                </option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
+              <CalendarDays size={15} className="text-white/40" />
+              <select
+                value={datePreset}
+                onChange={(e) => {
+                  setDatePreset(e.target.value as DatePreset);
+                  handleChangePage(0);
+                }}
+                className="bg-transparent text-sm text-white outline-none"
+              >
+                <option value="all" className="bg-[#111]">
+                  All dates
+                </option>
+                <option value="today" className="bg-[#111]">
+                  Today
+                </option>
+                <option value="7d" className="bg-[#111]">
+                  Last 7 days
+                </option>
+                <option value="30d" className="bg-[#111]">
+                  Last 30 days
+                </option>
+                <option value="custom" className="bg-[#111]">
+                  Custom range
+                </option>
+              </select>
+            </div>
+          </div>
         </div>
+
+        {datePreset === "custom" && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 md:flex-row md:items-end">
+            <div className="flex-1">
+              <p className="mb-2 text-xs font-medium text-white/45">From</p>
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  handleChangePage(0);
+                }}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none"
+              />
+            </div>
+
+            <div className="flex-1">
+              <p className="mb-2 text-xs font-medium text-white/45">To</p>
+              <input
+                type="date"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  handleChangePage(0);
+                }}
+                className="w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-white outline-none"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+                setDatePreset("all");
+                handleChangePage(0);
+              }}
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/75 transition hover:bg-white/10"
+            >
+              Clear range
+            </button>
+          </div>
+        )}
 
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/20">
           <div className="grid grid-cols-[0.5fr_0.8fr_1.1fr_0.6fr_0.4fr_40px] gap-3 border-b border-white/10 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/35">

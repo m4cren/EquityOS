@@ -1,11 +1,31 @@
+"use client";
 import { ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import React from "react";
+import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
 
 const Head = () => {
-  const value = 0.9;
+  const { tradeAccount, selectedTradeAcc } = useTradeAccount();
+
+  const selectedAccount = tradeAccount.find(
+    (acc) => acc.acc_name === selectedTradeAcc
+  );
+
+  if (!selectedAccount) {
+    return (
+      <div className="flex justify-between items-start w-full">
+        <p className="text-sm text-white/50">No account selected.</p>
+      </div>
+    );
+  }
+
+  const { equity, base_equity } = selectedAccount;
+
+  const value = Number(
+    (((equity - base_equity) / base_equity) * 100).toFixed(2)
+  );
   const max = 25;
 
-  const percent = (Math.abs(value) / max) * 50;
+  const percent = Math.min((Math.abs(value) / max) * 50, 50);
   const isPositive = value >= 0;
 
   return (
@@ -14,7 +34,13 @@ const Head = () => {
       <div className="flex items-start gap-3">
         <div>
           <p className="text-xs text-white/50 font-medium">Equity</p>
-          <p className="text-5xl font-semibold tracking-tight">$100,932</p>
+          <p className="text-5xl font-semibold tracking-tight">
+            $
+            {equity.toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 2,
+            })}
+          </p>
         </div>
 
         <span
@@ -23,7 +49,7 @@ const Head = () => {
           }`}
         >
           {isPositive ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-          {value}%
+          {Math.abs(value)}%
         </span>
       </div>
 
@@ -34,7 +60,7 @@ const Head = () => {
         <div className="flex items-center gap-2">
           <p className="text-[0.7rem] font-semibold text-red-400">-25%</p>
 
-          <div className="relative w-96 h-2 bg-white/10 rounded-md">
+          <div className="relative w-96 h-2 bg-white/10 rounded-md overflow-hidden">
             <div
               style={{
                 width: `${percent}%`,

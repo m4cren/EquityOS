@@ -246,20 +246,25 @@ export type SettingsConfigStateTypes = {
   isPending: boolean;
   errMsg: string | null;
 };
-export type SetupCriteria = {
-  isRefined: boolean;
-  isBelowOrAboveOpeningPrice: boolean;
-  isMssOccured: boolean;
-  isIFVG: boolean;
-  isFVG: boolean;
-  isDisplacement: boolean;
-  isLiquiditySweep: boolean;
-  isPoiMitigated: boolean;
+
+export type SystemCriterion = {
+  id: string;
+  label: string;
+  required: boolean;
 };
-export type Pair = "EURUSD" | "AUDUSD" | "GBPUSD" | "";
+
+export type TradingSystem = {
+  id: string;
+  name: string;
+  description: string;
+  edgeSummary: string;
+  steps: string[];
+  criteria: SystemCriterion[];
+  notes?: string;
+};
 
 export type TradeFormData = {
-  pair: Pair;
+  pair: string;
   type: "Long" | "Short";
   openTime: string;
   closeTime: string | null;
@@ -270,7 +275,7 @@ export type TradeFormData = {
   preSetupImg: string[];
   postSetupImg: string | null;
   pnl: number | null;
-  setupCriteria: SetupCriteria;
+  setupCriteria: SystemCriterion[];
   accounts: string[];
   pnl_in_usd: number | null;
 };
@@ -279,4 +284,19 @@ export type TradeHistoryStateTypes = {
   tradeHistory: (TradeFormData & { id: string })[];
   isPending: boolean;
   errMsg: string | null;
+};
+
+export type TradingAccountTypes = {
+  acc_id: string;
+  acc_name: string;
+  equity: number;
+  base_equity: number;
+  is_funded: boolean;
+};
+
+export type EquityHistoryTypes = {
+  acc_id: string;
+  acc_name: string;
+  recorded_at: string;
+  present_equity: number;
 };

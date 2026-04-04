@@ -27,12 +27,6 @@ const Dashboard = () => {
 
   const [open, setOpen] = useState(false);
 
-  const accountLabel = useMemo(() => {
-    if (selectedTradeAcc === "funded_m4cren") return "Funded M4cren";
-    if (selectedTradeAcc === "m4cren") return "M4cren";
-    return selectedTradeAcc;
-  }, [selectedTradeAcc]);
-
   return (
     <div className="w-[20vw] min-w-[260px] h-fit rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-xl">
       <div className="mb-4">
@@ -48,7 +42,7 @@ const Dashboard = () => {
           <button
             onClick={() => setOpen((prev) => !prev)}
             className={classNames(
-              "group flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 transition-all duration-200",
+              "group flex w-full cursor-pointer items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3 transition-all duration-200",
               "hover:border-white/15 hover:bg-white/[0.05]",
               {
                 "border-white/15 bg-white/[0.06]": open,
@@ -65,7 +59,7 @@ const Dashboard = () => {
                   Active Account
                 </p>
                 <p className="truncate text-sm font-semibold text-white">
-                  {accountLabel}
+                  {selectedTradeAcc}
                 </p>
               </div>
             </div>
@@ -84,14 +78,14 @@ const Dashboard = () => {
           {open && (
             <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-xl border border-white/10 bg-[#111111] shadow-2xl">
               <div className="p-1.5">
-                {tradeAccount.map((acc) => {
-                  const isActive = acc === selectedTradeAcc;
+                {tradeAccount.map(({ acc_name }) => {
+                  const isActive = acc_name === selectedTradeAcc;
 
                   return (
                     <button
-                      key={acc}
+                      key={acc_name}
                       onClick={() => {
-                        dispatch(setSelectedTradeAcc(acc));
+                        dispatch(setSelectedTradeAcc(acc_name));
                         setOpen(false);
                       }}
                       className={classNames(
@@ -103,9 +97,7 @@ const Dashboard = () => {
                         }
                       )}
                     >
-                      <span className="truncate">
-                        {acc === "funded_m4cren" ? "Funded M4cren" : "M4cren"}
-                      </span>
+                      <span className="truncate">{acc_name}</span>
 
                       {isActive && (
                         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-white/70">
