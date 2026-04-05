@@ -20,9 +20,9 @@ const demoTradeAccount: TradingAccountTypes[] = [
 
 const initialState = {
   tradeAccount: demoTradeAccount,
-  selectedTradeAcc: "m4cren",
+  selectedTradeAcc: demoTradeAccount[0]?.acc_name || "",
   isPending: false,
-  errMsg: null,
+  errMsg: null as string | null,
 };
 
 const tradeAccountSlice = createSlice({
@@ -32,8 +32,18 @@ const tradeAccountSlice = createSlice({
     setSelectedTradeAcc: (state, action: PayloadAction<string>) => {
       state.selectedTradeAcc = action.payload;
     },
+
+    addTradeAccount: (state, action: PayloadAction<TradingAccountTypes>) => {
+      state.tradeAccount.push(action.payload);
+
+      if (!state.selectedTradeAcc) {
+        state.selectedTradeAcc = action.payload.acc_name;
+      }
+    },
   },
 });
 
-export const { setSelectedTradeAcc } = tradeAccountSlice.actions;
+export const { setSelectedTradeAcc, addTradeAccount } =
+  tradeAccountSlice.actions;
+
 export default tradeAccountSlice.reducer;

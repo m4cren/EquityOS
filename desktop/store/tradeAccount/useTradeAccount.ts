@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "../store";
-import { setSelectedTradeAcc } from "./slice";
+import { addTradeAccount, setSelectedTradeAcc } from "./slice";
 
 export const useTradeAccount = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -13,6 +13,7 @@ export const useTradeAccount = () => {
     errMsg,
     tradeAccount,
     dispatch,
+    addTradeAccount,
     setSelectedTradeAcc,
     selectedTradeAcc,
   };
