@@ -4,7 +4,7 @@ import classNames from "classnames";
 import { Plus } from "lucide-react";
 import React from "react";
 
-type TradeItem = TradeFormData & { id: string };
+type TradeItem = TradeFormData;
 
 type Props = {
   day: Day;
@@ -95,11 +95,11 @@ const PNLDayCell: React.FC<Props> = ({
 
             return (
               <button
-                key={trade.id}
+                key={trade.trade_id}
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onOpenTrade(trade.id);
+                  onOpenTrade(trade.trade_id!);
                 }}
                 className={classNames(
                   "w-full flex items-center justify-between rounded-md px-2 py-1 text-[0.72vw] transition",

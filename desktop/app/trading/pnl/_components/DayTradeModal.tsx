@@ -4,7 +4,7 @@ import React from "react";
 import classNames from "classnames";
 import { TradeFormData } from "@/lib/types";
 
-type TradeItem = TradeFormData & { id: string };
+type TradeItem = TradeFormData;
 
 type Props = {
   dateLabel: string;
@@ -59,9 +59,9 @@ const DayTradesModal: React.FC<Props> = ({
 
               return (
                 <button
-                  key={trade.id}
+                  key={trade.trade_id}
                   type="button"
-                  onClick={() => onOpenTrade(trade.id)}
+                  onClick={() => onOpenTrade(trade.trade_id!)}
                   className="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-left transition hover:bg-white/[0.07]"
                 >
                   <div className="flex items-center justify-between gap-4">

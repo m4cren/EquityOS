@@ -1,27 +1,18 @@
 import { TradingAccountTypes } from "@/lib/types";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { fetchTradingAccount } from "./controller";
 
-const demoTradeAccount: TradingAccountTypes[] = [
-  {
-    acc_id: "2n2988",
-    acc_name: "m4cren",
-    base_equity: 3000,
-    equity: 3157,
-    is_funded: false,
-  },
-  {
-    acc_id: "29237v",
-    acc_name: "funded_m4cren",
-    base_equity: 200000,
-    equity: 203157,
-    is_funded: true,
-  },
-];
+type TradeAcountStateTypes = {
+  tradeAccount: TradingAccountTypes[];
+  selectedTradeAcc: string;
+  isPending: boolean;
+  errMsg: string | null;
+};
 
-const initialState = {
-  tradeAccount: demoTradeAccount,
-  selectedTradeAcc: demoTradeAccount[0]?.acc_name || "",
-  isPending: false,
+const initialState: TradeAcountStateTypes = {
+  tradeAccount: [],
+  selectedTradeAcc: "",
+  isPending: true,
   errMsg: null as string | null,
 };
 
@@ -32,18 +23,23 @@ const tradeAccountSlice = createSlice({
     setSelectedTradeAcc: (state, action: PayloadAction<string>) => {
       state.selectedTradeAcc = action.payload;
     },
-
-    addTradeAccount: (state, action: PayloadAction<TradingAccountTypes>) => {
-      state.tradeAccount.push(action.payload);
-
-      if (!state.selectedTradeAcc) {
-        state.selectedTradeAcc = action.payload.acc_name;
-      }
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(
+        fetchTradingAccount.fulfilled,
+        (state, action: PayloadAction<TradingAccountTypes[]>) => {
+          state.isPending = false;
+          state.tradeAccount = action.payload;
+          state.selectedTradeAcc = action.payload[0].acc_name;
+        }
+      )
+      .addCase(fetchTradingAccount.pending, (state) => {
+        state.isPending = true;
+      });
   },
 });
 
-export const { setSelectedTradeAcc, addTradeAccount } =
-  tradeAccountSlice.actions;
+export const { setSelectedTradeAcc } = tradeAccountSlice.actions;
 
 export default tradeAccountSlice.reducer;

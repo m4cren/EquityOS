@@ -1,13 +1,13 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
 import { api } from "@/app/service/api-client";
-import { TradeFormData } from "@/lib/types";
+import { TradingAccountTypes } from "@/lib/types";
 
-export const fetchTradeData = createAsyncThunk<TradeFormData[]>(
-  "tradeHistory/fetchTradeData",
+export const fetchTradingAccount = createAsyncThunk<TradingAccountTypes[]>(
+  "tradingAccount/fetchTradingAccount",
   async () => {
-    const data = await api<TradeFormData[]>({
-      endpoint: "/trading/fetch-trades",
+    const data = await api<TradingAccountTypes[]>({
+      endpoint: "/trading/fetch-accounts",
       method: "GET",
     });
 
@@ -15,35 +15,19 @@ export const fetchTradeData = createAsyncThunk<TradeFormData[]>(
   }
 );
 
-export const addTradeData = createAsyncThunk(
-  "tradeHistory/addTradeData",
-  async (trade: TradeFormData, thunAPI) => {
+export const addTradingAccount = createAsyncThunk(
+  "tradingAccount/addTradingAccount",
+  async (account: TradingAccountTypes, thunAPI) => {
     const { dispatch } = thunAPI;
 
-    if (!trade) return;
+    if (!account) return;
 
-    await api<void, typeof trade>({
-      endpoint: "/trading/add-trade",
+    await api<void, typeof account>({
+      endpoint: "/trading/add-account",
       method: "POST",
-      body: trade,
+      body: account,
     });
-    return await dispatch(fetchTradeData()).unwrap();
-  }
-);
-
-export const closeTrade = createAsyncThunk(
-  "tradingHistory/closeTrade",
-  async (trade: TradeFormData, thunAPI) => {
-    const { dispatch } = thunAPI;
-
-    if (!trade) return;
-
-    await api<void, typeof trade>({
-      endpoint: "/trading/close-trade",
-      method: "PATCH",
-      body: trade,
-    });
-    return await dispatch(fetchTradeData()).unwrap();
+    return await dispatch(fetchTradingAccount()).unwrap();
   }
 );
 
@@ -59,7 +43,7 @@ export const deleteTradingAccount = createAsyncThunk(
       method: "DELETE",
       body: account,
     });
-    return await dispatch(fetchTradeData()).unwrap();
+    return await dispatch(fetchTradingAccount()).unwrap();
   }
 );
 
@@ -78,6 +62,6 @@ export const editTradingAccount = createAsyncThunk(
       method: "PATCH",
       body: account,
     });
-    return await dispatch(fetchTradeData()).unwrap();
+    return await dispatch(fetchTradingAccount()).unwrap();
   }
 );

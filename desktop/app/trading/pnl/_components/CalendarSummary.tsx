@@ -5,7 +5,7 @@ import { TradeFormData } from "@/lib/types";
 import classNames from "classnames";
 import React, { useMemo } from "react";
 
-type TradeItem = TradeFormData & { id: string };
+type TradeItem = TradeFormData;
 
 type Props = {
   days: Day[];

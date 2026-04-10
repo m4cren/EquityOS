@@ -18,20 +18,22 @@ const PNLCalendar = () => {
     current: currentDate,
   } = useCalendar();
 
-  const { tradeHistory } = useTradeHistory();
+  const {
+    tradeHistory: trades,
+    addTradeData,
+    dispatch,
+    closeTrade,
+  } = useTradeHistory();
 
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
 
   const [isDayTradesModalOpen, setIsDayTradesModalOpen] = useState(false);
-  const [selectedDayTrades, setSelectedDayTrades] = useState<
-    (TradeFormData & { id: string })[]
-  >([]);
+  const [selectedDayTrades, setSelectedDayTrades] = useState<TradeFormData[]>(
+    []
+  );
   const [selectedDayLabel, setSelectedDayLabel] = useState("");
-
-  const [trades, setTrades] =
-    useState<(TradeFormData & { id: string })[]>(tradeHistory);
 
   const openNewTradeModal = (date: Date) => {
     const localDate = new Date(date);
@@ -45,7 +47,7 @@ const PNLCalendar = () => {
   };
 
   const openExistingTradeModal = (tradeId: string) => {
-    const existing = trades.find((t) => t.id === tradeId);
+    const existing = trades.find((t) => t.trade_id === tradeId);
     if (!existing) return;
 
     setSelectedDate(existing.openTime.split("T")[0]);
@@ -75,29 +77,17 @@ const PNLCalendar = () => {
     setIsDayTradesModalOpen(true);
   };
 
-  const handleSaveTrade = (payload: TradeFormData & { id?: string }) => {
-    if (payload.id) {
-      setTrades((prev) =>
-        prev.map((trade) =>
-          trade.id === payload.id
-            ? { ...trade, ...payload, id: trade.id }
-            : trade
-        )
-      );
-      return;
+  const handleSaveTrade = (payload: TradeFormData) => {
+    if (!payload.closeTime) {
+      dispatch(addTradeData(payload));
+    } else {
+      dispatch(closeTrade(payload));
     }
-
-    const newTrade = {
-      ...payload,
-      id: crypto.randomUUID(),
-    };
-
-    setTrades((prev) => [...prev, newTrade]);
   };
 
   const selectedTrade = useMemo(() => {
     if (!selectedTradeId) return null;
-    return trades.find((t) => t.id === selectedTradeId) ?? null;
+    return trades.find((t) => t.trade_id === selectedTradeId) ?? null;
   }, [selectedTradeId, trades]);
 
   return (

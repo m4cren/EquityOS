@@ -259,11 +259,13 @@ export type TradingSystem = {
   description: string;
   edgeSummary: string;
   steps: string[];
+  pairs: string[];
   criteria: SystemCriterion[];
   notes?: string;
 };
 
 export type TradeFormData = {
+  trade_id?: string;
   pair: string;
   type: "Long" | "Short";
   openTime: string;
@@ -281,13 +283,13 @@ export type TradeFormData = {
 };
 
 export type TradeHistoryStateTypes = {
-  tradeHistory: (TradeFormData & { id: string })[];
+  tradeHistory: TradeFormData[];
   isPending: boolean;
   errMsg: string | null;
 };
 
 export type TradingAccountTypes = {
-  acc_id: string;
+  acc_id?: string;
   acc_name: string;
   equity: number;
   base_equity: number;

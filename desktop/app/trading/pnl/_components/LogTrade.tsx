@@ -9,9 +9,9 @@ const ACCOUNTS_STATIC = ["m4cren", "Funded_m4cren"] as const;
 
 type Props = {
   onClose: () => void;
-  onSave: (trade: TradeFormData & { id?: string }) => void;
+  onSave: (trade: TradeFormData) => void;
   selectedDate: string | null;
-  existingTrade?: (TradeFormData & { id: string }) | null;
+  existingTrade?: TradeFormData | null;
 };
 
 const getLocalDateString = () => {
@@ -389,7 +389,9 @@ export default function LogTrade({
       tierSetup: setupGrade,
     };
 
-    onSave(existingTrade ? { ...payload, id: existingTrade.id } : payload);
+    onSave(
+      existingTrade ? { ...payload, trade_id: existingTrade.trade_id } : payload
+    );
     onClose();
   };
 
