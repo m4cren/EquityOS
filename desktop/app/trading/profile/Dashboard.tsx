@@ -146,38 +146,9 @@ const Dashboard = () => {
               />
             </button>
 
-            {!hasNoAccounts && selectedAccountData && (
-              <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.025] px-3.5 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/35">
-                      Balance
-                    </p>
-                    <p className="text-sm font-semibold text-white">
-                      ${selectedAccountData.equity.toLocaleString()}
-                    </p>
-                  </div>
-
-                  <span
-                    className={classNames(
-                      "rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]",
-                      {
-                        "bg-emerald-500/12 text-emerald-300":
-                          selectedAccountData.is_funded,
-                        "bg-white/8 text-white/65":
-                          !selectedAccountData.is_funded,
-                      }
-                    )}
-                  >
-                    {selectedAccountData.is_funded ? "Funded" : "Personal"}
-                  </span>
-                </div>
-              </div>
-            )}
-
             {open && !hasNoAccounts && (
-              <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-xl border border-white/10 bg-[#111111] shadow-2xl">
-                <div className="p-1.5">
+              <div className="absolute  left-0 right-0 top-[calc(100%+10px)] z-50 overflow-hidden rounded-xl border border-white/10 bg-[#111111] shadow-2xl">
+                <div className="p-1">
                   {tradeAccount.map(({ acc_name, is_funded }) => {
                     const isActive = acc_name === selectedTradeAcc;
 
@@ -189,7 +160,7 @@ const Dashboard = () => {
                           setOpen(false);
                         }}
                         className={classNames(
-                          "flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+                          "flex w-full my-1.5 items-center cursor-pointer justify-between rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                           {
                             "bg-white/10 font-semibold text-white": isActive,
                             "text-white/75 hover:bg-white/5 hover:text-white":
@@ -213,20 +184,20 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
+
+                <button
+                  onClick={() => {
+                    setShowAddAccountModal(true);
+                    setOpen(false);
+                  }}
+                  className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3.5 py-3 text-sm font-medium text-white/75 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.05] hover:text-white"
+                >
+                  <Plus size={16} />
+                  Add Account
+                </button>
               </div>
             )}
           </div>
-
-          <button
-            onClick={() => {
-              setShowAddAccountModal(true);
-              setOpen(false);
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-3.5 py-3 text-sm font-medium text-white/75 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.05] hover:text-white"
-          >
-            <Plus size={16} />
-            Add Account
-          </button>
 
           <ul className="flex flex-col gap-1.5">
             {Object.keys(dashboardIconMap).map((key) => {

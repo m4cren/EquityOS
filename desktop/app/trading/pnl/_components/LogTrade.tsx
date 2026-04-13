@@ -4,8 +4,7 @@ import { SystemCriterion, TradeFormData } from "@/lib/types";
 import { Calendar, Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTradingSystem } from "@/store/tradingSystem/useTradingSystem";
-
-const ACCOUNTS_STATIC = ["m4cren", "Funded_m4cren"] as const;
+import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
 
 type Props = {
   onClose: () => void;
@@ -105,6 +104,7 @@ export default function LogTrade({
   existingTrade,
 }: Props) {
   const { tradingSystem } = useTradingSystem();
+  const { tradeAccount } = useTradeAccount();
 
   const criteriaList = tradingSystem?.criteria || [];
   const pairs = tradingSystem?.pairs || [];
@@ -580,12 +580,12 @@ export default function LogTrade({
           <label className="text-xs text-white/50">Accounts</label>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {ACCOUNTS_STATIC.map((account) => {
-              const checked = trade.accounts.includes(account);
+            {tradeAccount.map(({ acc_name, acc_id, is_funded }) => {
+              const checked = trade.accounts.includes(acc_name);
 
               return (
                 <label
-                  key={account}
+                  key={acc_name}
                   className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition ${
                     checked
                       ? "border-green-500/30 bg-green-500/10 text-green-300"
@@ -600,9 +600,9 @@ export default function LogTrade({
                     type="checkbox"
                     checked={checked}
                     disabled={shouldLockEntryFields}
-                    onChange={() => handleAccountToggle(account)}
+                    onChange={() => handleAccountToggle(acc_name)}
                   />
-                  <span>{account}</span>
+                  <span>{acc_name}</span>
                 </label>
               );
             })}

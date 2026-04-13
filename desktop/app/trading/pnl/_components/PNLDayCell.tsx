@@ -66,7 +66,7 @@ const PNLDayCell: React.FC<Props> = ({
           }}
           className="absolute top-2 right-2 z-10 flex items-center justify-center rounded-lg bg-flame/25 hover:bg-flame/40 border border-flame/20 hover:border-flame/40 backdrop-blur-sm p-1.5 transition-all duration-200 shadow-xl"
         >
-          <Plus size={15} strokeWidth={2.5} className="text-white" />
+          <Plus size={14} strokeWidth={2.5} className="text-white" />
         </button>
       )}
 
@@ -86,7 +86,7 @@ const PNLDayCell: React.FC<Props> = ({
           </span>
         </div>
 
-        <div className="flex-1 space-y-1 overflow-y-auto pr-1">
+        <div className="flex-1 space-y-1 overflow-y-auto pr-1 mt-1.5">
           {trades.slice(0, 3).map((trade) => {
             const isClosed = !!trade.closeTime;
             const isWin = isClosed && (trade.pnl ?? 0) > 0;

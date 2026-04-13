@@ -5,7 +5,6 @@ export const fetchAccounts = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
 
   const { data, error } = await supabase.from("trading_account").select("*");
-  console.log(data);
 
   if (!error) {
     return res.json(data);

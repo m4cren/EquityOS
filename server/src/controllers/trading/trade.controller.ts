@@ -27,28 +27,64 @@ export const addNewTrade = async (req: Request, res: Response) => {
 
   return res.json(body);
 };
-
 export const closeTrade = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
   const body = req.body;
-  console.log("this is closing", body);
-  const { data, error } = await supabase
-    .from("trade_data")
-    .update({
-      closeTime: body.closeTime,
-      postNotes: body.postNotes,
-      postSetupImg: body.postSetupImg,
-      pnl: body.pnl,
-      pnl_in_usd: body.pnl_in_usd,
-    })
-    .eq("trade_id", body.trade_id)
-    .select()
-    .single();
-  console.log(error);
-  if (error) return res.status(400).json({ error });
-  return res.json(data);
-};
 
+  const accounts = body.accounts as string[];
+  const pnl_in_usd = body.pnl_in_usd;
+
+  // ✅ Update equity for all accounts
+  const updateAccount = async () => {
+    await Promise.all(
+      accounts.map(async (acc) => {
+        // 1. Get current equity
+        const { data: accountData, error: fetchError } = await supabase
+          .from("trading_account")
+          .select("equity")
+          .eq("acc_name", acc)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        const newEquity = (accountData.equity || 0) + pnl_in_usd;
+
+        // 2. Update equity
+        const { error: updateError } = await supabase
+          .from("trading_account")
+          .update({ equity: newEquity })
+          .eq("acc_name", acc);
+
+        if (updateError) throw updateError;
+      })
+    );
+  };
+
+  try {
+    // 🔥 First update accounts
+    await updateAccount();
+
+    // 🔥 Then close trade
+    const { data, error } = await supabase
+      .from("trade_data")
+      .update({
+        closeTime: body.closeTime,
+        postNotes: body.postNotes,
+        postSetupImg: body.postSetupImg,
+        pnl: body.pnl,
+        pnl_in_usd: body.pnl_in_usd,
+      })
+      .eq("trade_id", body.trade_id)
+      .select()
+      .single();
+
+    if (error) return res.status(400).json({ error });
+
+    return res.json(data);
+  } catch (err) {
+    return res.status(500).json({ error: err });
+  }
+};
 export const deleteAccount = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
   const body = req.body;
