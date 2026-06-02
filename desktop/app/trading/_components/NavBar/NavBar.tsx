@@ -1,21 +1,29 @@
 "use client";
 
-import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
-
+import { useTradeLevel } from "@/store/tradeLevel/useTradeLevel";
 import classNames from "classnames";
-import { ChevronDown, House, Trophy, User } from "lucide-react";
+import { House, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 
 const NavBar = () => {
   const pathname = usePathname();
+  const { xp_lvl } = useTradeLevel();
 
-  const { tradeAccount, setSelectedTradeAcc, selectedTradeAcc, dispatch } =
-    useTradeAccount();
+  // simple level thresholds (keep it light for navbar)
+  const levels = [0, 300, 800, 1800, 3500, 6000, 10000, 15000, 22000, 35000];
 
-  const [open, setOpen] = useState(false);
+  const currentIndex =
+    levels.findIndex((lvl) => xp_lvl < lvl) === -1
+      ? levels.length - 1
+      : levels.findIndex((lvl) => xp_lvl < lvl) - 1;
 
+  const currentBase = levels[currentIndex] ?? 0;
+  const next = levels[currentIndex + 1];
+
+  const progress = next
+    ? ((xp_lvl - currentBase) / (next - currentBase)) * 100
+    : 100;
   return (
     <nav className="p-5 px-18 flex items-center border-b border-white/10 justify-between w-full">
       <div>
@@ -33,29 +41,6 @@ const NavBar = () => {
             >
               <House />
             </button>
-
-            {open && (
-              <div className="absolute top-full mt-2 w-44 bg-card border border-white/10 rounded-md shadow-lg overflow-hidden z-50">
-                {tradeAccount.map((acc) => (
-                  <button
-                    key={acc}
-                    onClick={() => {
-                      dispatch(setSelectedTradeAcc(acc));
-                      setOpen(false);
-                    }}
-                    className={classNames(
-                      "w-full text-left px-3 py-2 text-sm hover:bg-white/10",
-                      {
-                        "bg-white/10 text-white font-semibold":
-                          acc === selectedTradeAcc,
-                      }
-                    )}
-                  >
-                    {acc}
-                  </button>
-                ))}
-              </div>
-            )}
           </Link>
 
           <Link
@@ -81,16 +66,18 @@ const NavBar = () => {
       </div>
 
       <div className="flex w-1/4 items-center gap-8 justify-end">
-        <div className="flex items-center gap-[0.6vw]">
-          <div className="bg-flame/20 w-50 h-2.5 rounded-md">
+        <div className="flex items-center gap-3">
+          {/* XP BAR */}
+          <div className="bg-flame/20 w-40 h-2 rounded-md overflow-hidden">
             <div
-              style={{ width: "35%" }}
-              className="bg-flame/70 h-full rounded-md"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+              className="bg-flame/70 h-full rounded-md transition-all"
             />
           </div>
-          <p className="text-sm font-bold opacity-60">10</p>
-        </div>
 
+          {/* LEVEL */}
+          <p className="text-sm font-bold opacity-70">Lv.{currentIndex + 1}</p>
+        </div>
         <Link
           className={classNames("flex items-center gap-2 px-2 py-2", {
             "bg-card rounded-md font-semibold !text-white": pathname.includes(

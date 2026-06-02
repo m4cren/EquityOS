@@ -8,6 +8,7 @@ import TradeJournalModal from "./LogTrade";
 import DayTradesModal from "./DayTradeModal";
 import { TradeFormData } from "@/lib/types";
 import { useTradeHistory } from "@/store/tradeHistory/useTradeHistory";
+import { useTradeLevel } from "@/store/tradeLevel/useTradeLevel";
 
 const PNLCalendar = () => {
   const {
@@ -24,7 +25,7 @@ const PNLCalendar = () => {
     dispatch,
     closeTrade,
   } = useTradeHistory();
-
+  const { isPending, xp_lvl, increaseTradeLevel } = useTradeLevel();
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(null);
@@ -78,10 +79,12 @@ const PNLCalendar = () => {
   };
 
   const handleSaveTrade = (payload: TradeFormData) => {
+    console.log(payload);
     if (!payload.closeTime) {
       dispatch(addTradeData(payload));
     } else {
       dispatch(closeTrade(payload));
+      dispatch(increaseTradeLevel(Number(xp_lvl + 50)));
     }
   };
 

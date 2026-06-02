@@ -1,7 +1,7 @@
-import React from "react";
+import EquityProgressionUI from "./_components/Achievements";
 
 const page = () => {
-  return <div></div>;
+  return <EquityProgressionUI />;
 };
 
 export default page;

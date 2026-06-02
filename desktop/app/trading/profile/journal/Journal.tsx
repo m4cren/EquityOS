@@ -18,17 +18,6 @@ import { useTradingSystem } from "@/store/tradingSystem/useTradingSystem";
 
 const PAGE_SIZE = 8;
 
-const LEGACY_CRITERIA_LABELS: Record<string, string> = {
-  isRefined: "Refined entry",
-  isBelowOrAboveOpeningPrice: "Above / Below opening price",
-  isMssOccured: "MSS occurred",
-  isIFVG: "IFVG",
-  isFVG: "FVG",
-  isDisplacement: "Displacement",
-  isLiquiditySweep: "Liquidity sweep",
-  isPoiMitigated: "POI mitigated",
-};
-
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
 
@@ -111,7 +100,7 @@ const normalizeSetupCriteria = (
 
         return {
           id: key,
-          label: LEGACY_CRITERIA_LABELS[key] || key,
+          label: key,
           required: false,
         };
       });
@@ -172,7 +161,7 @@ const Journal = () => {
       .filter(
         (trade) =>
           Array.isArray(trade.accounts) &&
-          trade.accounts.includes(selectedTradeAcc)
+          trade.accounts?.some((acc) => acc.account === selectedTradeAcc)
       )
       .filter((trade) => {
         if (!profitableOnly) return true;
@@ -277,16 +266,24 @@ const Journal = () => {
     router,
     searchParams,
   ]);
+  const accountTrades = useMemo(() => {
+    return tradeHistory.filter((trade) =>
+      trade.accounts?.some((acc) => acc.account === selectedTradeAcc)
+    );
+  }, [tradeHistory, selectedTradeAcc]);
 
-  const tradeCount = filteredTrades.length;
-  const totalR = filteredTrades.reduce(
-    (sum, trade) => sum + (trade.pnl ?? 0),
-    0
-  );
-  const totalUsd = filteredTrades.reduce(
-    (sum, trade) => sum + (trade.pnl_in_usd ?? 0),
-    0
-  );
+  const tradeCount = accountTrades.length;
+
+  const totalUsd = useMemo(() => {
+    return accountTrades.reduce((sum, trade) => {
+      const acc = trade.accounts?.find((a) => a.account === selectedTradeAcc);
+      return sum + (acc?.pnl_in_usd ?? 0);
+    }, 0);
+  }, [accountTrades, selectedTradeAcc]);
+
+  const totalR = useMemo(() => {
+    return accountTrades.reduce((sum, trade) => sum + (trade.pnl ?? 0), 0);
+  }, [accountTrades]);
 
   const selectedTradeCriteria = useMemo(() => {
     if (!selectedTrade) return [];
@@ -660,72 +657,77 @@ const Journal = () => {
                 No trades found.
               </div>
             ) : (
-              paginatedTrades.map((trade) => (
-                <button
-                  key={trade.id}
-                  onClick={() => setSelectedTrade(trade)}
-                  className="grid cursor-pointer grid-cols-[0.5fr_0.8fr_1.1fr_0.6fr_0.4fr_40px] gap-3 border-b border-white/5 px-4 py-4 text-left transition hover:bg-white/[0.03]"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-white">
-                      {trade.pair || "—"}
-                    </p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <span
-                        className={classNames(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                          trade.type === "Short"
-                            ? "bg-red-500/15 text-red-300"
-                            : "bg-green-500/15 text-green-300"
-                        )}
-                      >
-                        {trade.type || "—"}
-                      </span>
+              paginatedTrades.map((trade) => {
+                const accData = trade.accounts?.find(
+                  (a) => a.account === selectedTradeAcc
+                );
+                return (
+                  <button
+                    key={trade.trade_id}
+                    onClick={() => setSelectedTrade(trade)}
+                    className="grid cursor-pointer grid-cols-[0.5fr_0.8fr_1.1fr_0.6fr_0.4fr_40px] gap-3 border-b border-white/5 px-4 py-4 text-left transition hover:bg-white/[0.03]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">
+                        {trade.pair || "—"}
+                      </p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span
+                          className={classNames(
+                            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                            trade.type === "Short"
+                              ? "bg-red-500/15 text-red-300"
+                              : "bg-green-500/15 text-green-300"
+                          )}
+                        >
+                          {trade.type || "—"}
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="text-sm text-white/70">
-                    {formatDateTime(trade.openTime)}
-                  </div>
+                    <div className="text-sm text-white/70">
+                      {formatDateTime(trade.openTime)}
+                    </div>
 
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white/80">
-                      {trade.tierSetup || "—"}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-white/35">
-                      {trade.notes || "No notes"}
-                    </p>
-                  </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-white/80">
+                        {trade.tierSetup || "—"}
+                      </p>
+                      <p className="mt-1 truncate text-xs text-white/35">
+                        {trade.notes || "No notes"}
+                      </p>
+                    </div>
 
-                  <div className="text-sm text-white/70">
-                    {formatTradeDuration(trade.openTime, trade.closeTime)}
-                  </div>
+                    <div className="text-sm text-white/70">
+                      {formatTradeDuration(trade.openTime, trade.closeTime)}
+                    </div>
 
-                  <div>
-                    <p
-                      className={classNames("text-sm font-semibold", {
-                        "text-green-400": (trade.pnl ?? 0) >= 0,
-                        "text-red-400": (trade.pnl ?? 0) < 0,
-                      })}
-                    >
-                      {formatR(trade.pnl)}
-                    </p>
-                    <p
-                      className={classNames("mt-1 text-xs", {
-                        "text-white/35": (trade.pnl_in_usd ?? 0) >= 0,
-                        "text-red-300/70": (trade.pnl_in_usd ?? 0) < 0,
-                      })}
-                    >
-                      {(trade.pnl_in_usd ?? 0) >= 0 ? "+" : ""}
-                      {(trade.pnl_in_usd ?? 0).toFixed(2)} USD
-                    </p>
-                  </div>
+                    <div>
+                      <p
+                        className={classNames("text-sm font-semibold", {
+                          "text-green-400": (trade.pnl ?? 0) >= 0,
+                          "text-red-400": (trade.pnl ?? 0) < 0,
+                        })}
+                      >
+                        {formatR(trade.pnl)}
+                      </p>
+                      <p
+                        className={classNames("text-sm font-semibold", {
+                          "text-green-400": (accData?.pnl_in_usd ?? 0) >= 0,
+                          "text-red-400": (accData?.pnl_in_usd ?? 0) < 0,
+                        })}
+                      >
+                        {(accData?.pnl_in_usd ?? 0) >= 0 ? "+" : ""}
+                        {(accData?.pnl_in_usd ?? 0).toFixed(2)} USD
+                      </p>
+                    </div>
 
-                  <div className="flex items-center justify-end text-white/30">
-                    <ChevronRight size={16} />
-                  </div>
-                </button>
-              ))
+                    <div className="flex items-center justify-end text-white/30">
+                      <ChevronRight size={16} />
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

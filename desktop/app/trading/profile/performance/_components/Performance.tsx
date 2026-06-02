@@ -27,24 +27,35 @@ const average = (values: number[]) =>
 const formatDuration = (minutes: number) => {
   const hrs = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return `${hrs}h ${mins}m`;
+  return `${hrs}h ${mins.toFixed(1)}m`;
 };
 
 const Performance = () => {
   const { selectedTradeAcc } = useTradeAccount();
   const { tradeHistory } = useTradeHistory();
 
-  const filteredTrades = useMemo(() => {
-    return tradeHistory.filter((trade) =>
-      trade.accounts.includes(selectedTradeAcc)
-    );
+  const normalizedTrades = useMemo(() => {
+    return tradeHistory
+      .map((t) => {
+        const acc = t.accounts?.find((a) => a.account === selectedTradeAcc);
+
+        if (!acc) return null;
+
+        return {
+          ...t,
+          pnlUsd: acc.pnl_in_usd ?? 0,
+        };
+      })
+      .filter(Boolean);
   }, [tradeHistory, selectedTradeAcc]);
 
   const stats = useMemo(() => {
-    const wins = filteredTrades.filter((trade) => (trade.pnl ?? 0) > 0);
-    const losses = filteredTrades.filter((trade) => (trade.pnl ?? 0) < 0);
+    const trades = normalizedTrades;
 
-    const totalTrades = filteredTrades.length;
+    const wins = trades.filter((t) => t!.pnlUsd > 0);
+    const losses = trades.filter((t) => t!.pnlUsd < 0);
+
+    const totalTrades = trades.length;
     const totalWins = wins.length;
     const totalLosses = losses.length;
 
@@ -52,20 +63,10 @@ const Performance = () => {
       ? Math.round((totalWins / totalTrades) * 100)
       : 0;
 
-    const avgRRR = average(wins.map((trade) => trade.pnl ?? 0));
-    const totalR = filteredTrades.reduce(
-      (sum, trade) => sum + (trade.pnl ?? 0),
-      0
-    );
-    const expectancy = totalTrades ? totalR / totalTrades : 0;
+    const totalUsd = trades.reduce((sum, t) => sum + t!.pnlUsd, 0);
 
-    const totalUsd = filteredTrades.reduce(
-      (sum, trade) => sum + (trade.pnl_in_usd ?? 0),
-      0
-    );
-
-    const shortWins = wins.filter((trade) => trade.type === "Short").length;
-    const longWins = wins.filter((trade) => trade.type === "Long").length;
+    const shortWins = wins.filter((t) => t!.type === "Short").length;
+    const longWins = wins.filter((t) => t!.type === "Long").length;
 
     const shortWinShare = totalWins
       ? Math.round((shortWins / totalWins) * 100)
@@ -75,86 +76,85 @@ const Performance = () => {
       ? Math.round((longWins / totalWins) * 100)
       : 0;
 
-    const durations = filteredTrades
-      .filter((trade) => trade.closeTime)
-      .map((trade) => {
-        const open = new Date(trade.openTime).getTime();
-        const close = new Date(trade.closeTime as string).getTime();
-        return Math.max(0, Math.round((close - open) / 60000));
-      });
-
-    const avgTradeMinutes = Math.round(average(durations));
-
-    const sorted = [...filteredTrades].sort(
-      (a, b) => new Date(a.openTime).getTime() - new Date(b.openTime).getTime()
+    const sorted = [...trades].sort(
+      (a, b) =>
+        new Date(a!.openTime).getTime() - new Date(b!.openTime).getTime()
     );
 
-    let currentWinStreak = 0;
-    let currentLossStreak = 0;
-    let maxWinStreak = 0;
-    let maxLossStreak = 0;
-
     let equity = BASE_EQUITY;
-    let peakEquity = BASE_EQUITY;
-    let maxDrawdownUsd = 0;
-    let maxDrawdownPct = 0;
+    let peak = BASE_EQUITY;
+    let maxDD = 0;
+    let maxDDPct = 0;
 
-    for (const trade of sorted) {
-      const pnlR = trade.pnl ?? 0;
-      const pnlUsd = trade.pnl_in_usd ?? 0;
+    let winStreak = 0;
+    let lossStreak = 0;
+    let maxWin = 0;
+    let maxLoss = 0;
 
-      if (pnlR > 0) {
-        currentWinStreak += 1;
-        currentLossStreak = 0;
-      } else if (pnlR < 0) {
-        currentLossStreak += 1;
-        currentWinStreak = 0;
+    for (const t of sorted) {
+      const pnl = t!.pnlUsd;
+
+      if (pnl > 0) {
+        winStreak++;
+        lossStreak = 0;
+      } else if (pnl < 0) {
+        lossStreak++;
+        winStreak = 0;
       }
 
-      if (currentWinStreak > maxWinStreak) {
-        maxWinStreak = currentWinStreak;
-      }
+      maxWin = Math.max(maxWin, winStreak);
+      maxLoss = Math.max(maxLoss, lossStreak);
 
-      if (currentLossStreak > maxLossStreak) {
-        maxLossStreak = currentLossStreak;
-      }
+      equity += pnl;
+      peak = Math.max(peak, equity);
 
-      equity += pnlUsd;
+      const dd = peak - equity;
+      const ddPct = peak ? (dd / peak) * 100 : 0;
 
-      if (equity > peakEquity) {
-        peakEquity = equity;
-      }
-
-      const drawdownUsd = peakEquity - equity;
-      const drawdownPct = peakEquity ? (drawdownUsd / peakEquity) * 100 : 0;
-
-      if (drawdownUsd > maxDrawdownUsd) {
-        maxDrawdownUsd = drawdownUsd;
-      }
-
-      if (drawdownPct > maxDrawdownPct) {
-        maxDrawdownPct = drawdownPct;
-      }
+      maxDD = Math.max(maxDD, dd);
+      maxDDPct = Math.max(maxDDPct, ddPct);
     }
+
+    const avgTradeMinutes = average(
+      trades
+        .filter((t) => t!.closeTime)
+        .map((t) => {
+          const open = new Date(t!.openTime).getTime();
+          const close = new Date(t!.closeTime as string).getTime();
+          return Math.max(0, Math.round((close - open) / 60000));
+        })
+    );
 
     return {
       profitRate,
-      avgRRR,
       totalTrades,
       totalWins,
       totalLosses,
-      totalR,
-      expectancy,
       totalUsd,
+
       shortWinShare,
       longWinShare,
+      maxWinStreak: maxWin,
+      maxLossStreak: maxLoss,
+      maxDrawdownUsd: maxDD,
+      maxDrawdownPct: maxDDPct,
       avgTradeMinutes,
-      maxWinStreak,
-      maxLossStreak,
-      maxDrawdownUsd,
-      maxDrawdownPct,
     };
-  }, [filteredTrades]);
+  }, [normalizedTrades]);
+
+  const expectancyR = useMemo(() => {
+    const trades = normalizedTrades;
+
+    const validTrades = trades.filter((t) => t!.pnl! !== 0);
+
+    const totalR = validTrades.reduce((sum, t) => {
+      const risk = t!.risk || 1;
+      const r = t!.pnl! / risk;
+      return sum + r;
+    }, 0);
+
+    return validTrades.length ? totalR / validTrades.length : 0;
+  }, [normalizedTrades]);
 
   const weeklyTradeData = useMemo(() => {
     const base = weekdayOrder.map((day) => ({
@@ -164,27 +164,28 @@ const Performance = () => {
       losses: 0,
     }));
 
-    for (const trade of filteredTrades) {
-      const day = getWeekday(trade.openTime);
-      const row = base.find((item) => item.day === day);
-
+    for (const trade of normalizedTrades) {
+      const day = getWeekday(trade!.openTime);
+      const row = base.find((d) => d.day === day);
       if (!row) continue;
 
       row.trades += 1;
-      if ((trade.pnl ?? 0) > 0) row.wins += 1;
-      if ((trade.pnl ?? 0) < 0) row.losses += 1;
+      if (trade!.pnlUsd > 0) row.wins += 1;
+      if (trade!.pnlUsd < 0) row.losses += 1;
     }
 
     return base;
-  }, [filteredTrades]);
+  }, [normalizedTrades]);
 
-  const bestDay = useMemo(() => {
-    return [...weeklyTradeData].sort((a, b) => b.wins - a.wins)[0];
-  }, [weeklyTradeData]);
+  const bestDay = useMemo(
+    () => [...weeklyTradeData].sort((a, b) => b.wins - a.wins)[0],
+    [weeklyTradeData]
+  );
 
-  const worstDay = useMemo(() => {
-    return [...weeklyTradeData].sort((a, b) => b.losses - a.losses)[0];
-  }, [weeklyTradeData]);
+  const worstDay = useMemo(
+    () => [...weeklyTradeData].sort((a, b) => b.losses - a.losses)[0],
+    [weeklyTradeData]
+  );
 
   return (
     <div className="flex flex-col gap-12">
@@ -209,12 +210,9 @@ const Performance = () => {
 
           <div className="grid grid-cols-2 gap-6 text-center">
             <div>
-              <h5 className="text-3xl font-bold">
-                {stats.avgRRR ? `${stats.avgRRR.toFixed(2)}R` : "0R"}
-              </h5>
-              <p className="text-xs text-white/60">AVG RRR</p>
+              <h5 className="text-3xl font-bold">{expectancyR.toFixed(2)}R</h5>
+              <p className="text-xs text-white/60">EXPECTANCY</p>
             </div>
-
             <div>
               <h5 className="text-3xl font-bold">{stats.totalTrades}</h5>
               <p className="text-xs text-white/60">Closed Orders</p>
@@ -274,17 +272,15 @@ const Performance = () => {
 
           <div className="flex justify-between text-sm">
             <div>
-              <p className="text-white/60">Net R</p>
+              <p className="text-white/60">Total PnL</p>
               <p className="text-lg font-semibold">
-                {stats.totalR.toFixed(2)}R
+                {stats.totalUsd.toFixed(2)} USD
               </p>
             </div>
 
             <div>
               <p className="text-white/60">Expectancy</p>
-              <p className="text-lg font-semibold">
-                {stats.expectancy.toFixed(2)}R
-              </p>
+              <p className="text-lg font-semibold">{expectancyR.toFixed(2)}R</p>
             </div>
           </div>
         </div>

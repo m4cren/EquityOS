@@ -254,14 +254,19 @@ export type SystemCriterion = {
 };
 
 export type TradingSystem = {
-  id: string;
-  name: string;
-  description: string;
-  edgeSummary: string;
-  steps: string[];
-  pairs: string[];
-  criteria: SystemCriterion[];
-  notes?: string;
+  name: string | null;
+  description: string | null;
+  edgeSummary: string | null | null;
+  steps: string[] | null;
+  pairs: string[] | null;
+  criteria: SystemCriterion[] | null;
+  notes?: string | null;
+};
+
+export type AccountTradeDataTypes = {
+  acc_id?: string;
+  account: string;
+  pnl_in_usd: number | null;
 };
 
 export type TradeFormData = {
@@ -278,8 +283,7 @@ export type TradeFormData = {
   postSetupImg: string | null;
   pnl: number | null;
   setupCriteria: SystemCriterion[];
-  accounts: string[];
-  pnl_in_usd: number | null;
+  accounts: AccountTradeDataTypes[];
 };
 
 export type TradeHistoryStateTypes = {
@@ -293,12 +297,48 @@ export type TradingAccountTypes = {
   acc_name: string;
   equity: number;
   base_equity: number;
+  equity_month_start: number;
   is_funded: boolean;
+  equity_month: string;
 };
 
-export type EquityHistoryTypes = {
-  acc_id: string;
-  acc_name: string;
-  recorded_at: string;
-  present_equity: number;
+export type TradingEquityTypes = {
+  id?: number;
+  created_at?: string;
+  trading_acc_id: string;
+  equity: number;
+  date_str: string;
+};
+export type TradingEquityArgs = {
+  trading_acc_id: string;
+  equity: number;
+  date_str: string;
+};
+export type Achievement = {
+  id: string;
+  title: string;
+  description: string;
+  category: "discipline" | "journaling" | "risk" | "consistency" | "mastery";
+  xpReward: number;
+  progress: number;
+  target: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
+  icon?: string;
+};
+
+export type TraderLevel = {
+  level: number;
+  title: string;
+  tier: 1 | 2 | 3 | 4;
+  xpRequired: number;
+  themeLabel: string;
+};
+
+export type XpEvent = {
+  id: string;
+  label: string;
+  xp: number;
+  type: "gain" | "penalty" | "badge";
+  createdAt: string;
 };

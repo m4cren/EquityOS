@@ -5,6 +5,7 @@ import { Calendar, Clock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useTradingSystem } from "@/store/tradingSystem/useTradingSystem";
 import { useTradeAccount } from "@/store/tradeAccount/useTradeAccount";
+import { useTradeLevel } from "@/store/tradeLevel/useTradeLevel";
 
 type Props = {
   onClose: () => void;
@@ -26,7 +27,30 @@ const getNowLocalTime = () => {
   const mm = String(now.getMinutes()).padStart(2, "0");
   return `${hh}:${mm}`;
 };
+const getTradeXpReward = ({
+  setupGrade,
+  pnl,
+  postNotes,
+  postSetupImg,
+}: {
+  setupGrade: string;
+  pnl: number | null;
+  postNotes: string;
+  postSetupImg: string | null;
+}) => {
+  const isProfitable = (pnl ?? 0) > 0;
+  const hasReview = !!postNotes.trim();
+  const hasPostImage = !!postSetupImg;
 
+  let xp = 70; // base XP for closing a valid trade
+
+  if (setupGrade === "A+") xp += 25;
+  if (isProfitable) xp += 20;
+  if (hasReview) xp += 15;
+  if (hasPostImage) xp += 10;
+
+  return xp;
+};
 const getNowLocalDateTime = () => {
   const now = new Date();
   const offset = now.getTimezoneOffset();
@@ -80,7 +104,6 @@ const createDefaultTrade = (selectedDate?: string | null): TradeFormData => ({
   pnl: null,
   setupCriteria: [],
   accounts: [],
-  pnl_in_usd: null,
 });
 const normalizeSetupCriteria = (
   setupCriteria:
@@ -104,11 +127,38 @@ export default function LogTrade({
   existingTrade,
 }: Props) {
   const { tradingSystem } = useTradingSystem();
-  const { tradeAccount } = useTradeAccount();
-
+  const { xp_lvl, dispatch, increaseTradeLevel } = useTradeLevel();
+  const { tradeAccount, selectedTradeAcc } = useTradeAccount();
   const criteriaList = tradingSystem?.criteria || [];
   const pairs = tradingSystem?.pairs || [];
+  const [isScalingTrade, setIsScalingTrade] = useState(false);
 
+  const selectedAccount = useMemo(() => {
+    return tradeAccount.find((acc) => acc.acc_name === selectedTradeAcc);
+  }, [tradeAccount, selectedTradeAcc]);
+
+  const recommendedRisk = useMemo(() => {
+    if (!selectedAccount || !selectedAccount.base_equity) return 1;
+
+    const performance = Number(
+      (
+        ((selectedAccount.equity - selectedAccount.base_equity) /
+          selectedAccount.base_equity) *
+        100
+      ).toFixed(2)
+    );
+
+    let risk = 1;
+
+    if (performance < 0) {
+      const drawdown = Math.abs(performance);
+
+      if (drawdown >= 6) risk = 0.6;
+      else if (drawdown >= 3) risk = 0.8;
+    }
+
+    return isScalingTrade ? Number((risk / 2).toFixed(2)) : risk;
+  }, [selectedAccount, isScalingTrade]);
   const requiredCriteria = useMemo(
     () => criteriaList.filter((item) => item.required),
     [criteriaList]
@@ -179,7 +229,14 @@ export default function LogTrade({
   const isCriterionChecked = (criterionId: string) => {
     return selectedCriteriaIds.has(criterionId);
   };
-
+  const handleAccountPnlChange = (accName: string, value: number | null) => {
+    setTrade((prev) => ({
+      ...prev,
+      accounts: prev.accounts.map((acc) =>
+        acc.account === accName ? { ...acc, pnl_in_usd: value } : acc
+      ),
+    }));
+  };
   const handleCriteriaChange = (criterion: SystemCriterion) => {
     if (shouldLockEntryFields) return;
 
@@ -197,17 +254,17 @@ export default function LogTrade({
     });
   };
 
-  const handleAccountToggle = (account: string) => {
+  const handleAccountToggle = (accName: string) => {
     if (shouldLockEntryFields) return;
 
     setTrade((prev) => {
-      const exists = prev.accounts.includes(account);
+      const exists = prev.accounts.some((acc) => acc.account === accName);
 
       return {
         ...prev,
         accounts: exists
-          ? prev.accounts.filter((item) => item !== account)
-          : [...prev.accounts, account],
+          ? prev.accounts.filter((acc) => acc.account !== accName)
+          : [...prev.accounts, { account: accName, pnl_in_usd: 0 }],
       };
     });
   };
@@ -293,7 +350,13 @@ export default function LogTrade({
 
   const validateTrade = () => {
     const nextErrors: string[] = [];
+    const missingAccountPnL = trade.accounts.some(
+      (acc) => acc.pnl_in_usd === null
+    );
 
+    if (missingAccountPnL) {
+      nextErrors.push("Each account must have PnL in USD.");
+    }
     if (!tradingSystem) {
       nextErrors.push("No active trading system found.");
     }
@@ -378,8 +441,11 @@ export default function LogTrade({
     setErrors([]);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validateTrade()) return;
+
+    const isClosingTradeNow =
+      shouldShowCloseSection && !existingTrade?.closeTime;
 
     const payload = {
       ...trade,
@@ -392,9 +458,20 @@ export default function LogTrade({
     onSave(
       existingTrade ? { ...payload, trade_id: existingTrade.trade_id } : payload
     );
+
+    if (isClosingTradeNow) {
+      const earnedXp = getTradeXpReward({
+        setupGrade,
+        pnl: trade.pnl,
+        postNotes: trade.postNotes,
+        postSetupImg: trade.postSetupImg,
+      });
+
+      await dispatch(increaseTradeLevel(xp_lvl + earnedXp));
+    }
+
     onClose();
   };
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6 backdrop-blur-sm"
@@ -479,10 +556,10 @@ export default function LogTrade({
                     <div className="flex flex-wrap gap-2">
                       {trade.accounts.map((account) => (
                         <span
-                          key={account}
+                          key={account.account}
                           className="inline-flex items-center rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-medium text-white/90"
                         >
-                          {account}
+                          {account.account}
                         </span>
                       ))}
                     </div>
@@ -515,9 +592,14 @@ export default function LogTrade({
 
                 <div className="rounded-lg bg-black/20 p-3">
                   <p className="mb-1 text-xs text-white/50">PnL in USD</p>
-                  <p className="text-sm text-white">
-                    {trade.pnl_in_usd ?? "—"}
-                  </p>
+
+                  <div className="flex flex-col gap-1">
+                    {trade.accounts.map((acc) => (
+                      <span key={acc.account} className="text-sm text-white">
+                        {acc.account}: {acc.pnl_in_usd ?? "—"}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -580,8 +662,10 @@ export default function LogTrade({
           <label className="text-xs text-white/50">Accounts</label>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {tradeAccount.map(({ acc_name, acc_id, is_funded }) => {
-              const checked = trade.accounts.includes(acc_name);
+            {tradeAccount.map(({ acc_name }) => {
+              const checked = trade.accounts.some(
+                (acc) => acc.account === acc_name
+              );
 
               return (
                 <label
@@ -610,12 +694,12 @@ export default function LogTrade({
 
           {trade.accounts.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {trade.accounts.map((account) => (
+              {trade.accounts.map((acc) => (
                 <span
-                  key={account}
+                  key={acc.account}
                   className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80"
                 >
-                  {account}
+                  {acc.account}
                 </span>
               ))}
             </div>
@@ -662,7 +746,32 @@ export default function LogTrade({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs text-white/50">Risk %</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-xs text-white/50">Risk %</label>
+
+              <div className="flex items-center gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-[11px] text-white/50">
+                  <input
+                    type="checkbox"
+                    checked={isScalingTrade}
+                    disabled={shouldLockEntryFields}
+                    onChange={(e) => setIsScalingTrade(e.target.checked)}
+                    className="h-3 w-3"
+                  />
+                  Scaling trade
+                </label>
+
+                <button
+                  type="button"
+                  disabled={shouldLockEntryFields}
+                  onClick={() => handleInputChange("risk", recommendedRisk)}
+                  className="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Recommended: {recommendedRisk}%
+                </button>
+              </div>
+            </div>
+
             <input
               type="number"
               step="0.1"
@@ -950,9 +1059,9 @@ export default function LogTrade({
           </div>
         )}
 
-        {shouldShowCloseSection && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        {shouldShowCloseSection && trade.accounts.length > 0 && (
+          <div>
+            <div className="space-y-2 mb-4">
               <label className="text-xs text-white/50">PnL</label>
               <input
                 type="number"
@@ -965,25 +1074,35 @@ export default function LogTrade({
                   )
                 }
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-                placeholder="e.g. 1.50 or -0.75"
+                placeholder=""
               />
             </div>
+            <h3 className="mb-2 text-lg font-semibold">
+              PnL in USD (Per Account)
+            </h3>
 
-            <div className="space-y-2">
-              <label className="text-xs text-white/50">PnL in USD</label>
-              <input
-                type="number"
-                step="0.01"
-                value={trade.pnl_in_usd ?? ""}
-                onChange={(e) =>
-                  handleInputChange(
-                    "pnl_in_usd",
-                    e.target.value === "" ? null : Number(e.target.value)
-                  )
-                }
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
-                placeholder="e.g. 125.50 or -75"
-              />
+            <div className="space-y-3">
+              {trade.accounts.map((acc) => (
+                <div key={acc.account} className="flex items-center gap-3">
+                  <div className="w-40 text-sm text-white/70">
+                    {acc.account}
+                  </div>
+
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={acc.pnl_in_usd ?? ""}
+                    onChange={(e) =>
+                      handleAccountPnlChange(
+                        acc.account,
+                        e.target.value === "" ? null : Number(e.target.value)
+                      )
+                    }
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 outline-none"
+                    placeholder=""
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}

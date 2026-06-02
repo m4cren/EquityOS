@@ -31,10 +31,11 @@ export const closeTrade = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
   const body = req.body;
 
-  const accounts = body.accounts as string[];
-  const pnl_in_usd = body.pnl_in_usd;
+  const accounts = body.accounts as {
+    account: string;
+    pnl_in_usd: number;
+  }[];
 
-  // ✅ Update equity for all accounts
   const updateAccount = async () => {
     await Promise.all(
       accounts.map(async (acc) => {
@@ -42,18 +43,18 @@ export const closeTrade = async (req: Request, res: Response) => {
         const { data: accountData, error: fetchError } = await supabase
           .from("trading_account")
           .select("equity")
-          .eq("acc_name", acc)
+          .eq("acc_name", acc.account)
           .single();
 
         if (fetchError) throw fetchError;
 
-        const newEquity = (accountData.equity || 0) + pnl_in_usd;
+        const newEquity = (accountData.equity || 0) + (acc.pnl_in_usd || 0);
 
         // 2. Update equity
         const { error: updateError } = await supabase
           .from("trading_account")
           .update({ equity: newEquity })
-          .eq("acc_name", acc);
+          .eq("acc_name", acc.account);
 
         if (updateError) throw updateError;
       })
@@ -61,10 +62,10 @@ export const closeTrade = async (req: Request, res: Response) => {
   };
 
   try {
-    // 🔥 First update accounts
+    // 🔥 1. Update account equities
     await updateAccount();
 
-    // 🔥 Then close trade
+    // 🔥 2. Close trade (store accounts JSON instead of pnl_in_usd)
     const { data, error } = await supabase
       .from("trade_data")
       .update({
@@ -72,7 +73,7 @@ export const closeTrade = async (req: Request, res: Response) => {
         postNotes: body.postNotes,
         postSetupImg: body.postSetupImg,
         pnl: body.pnl,
-        pnl_in_usd: body.pnl_in_usd,
+        accounts: accounts, // ✅ store full breakdown
       })
       .eq("trade_id", body.trade_id)
       .select()
@@ -85,6 +86,7 @@ export const closeTrade = async (req: Request, res: Response) => {
     return res.status(500).json({ error: err });
   }
 };
+
 export const deleteAccount = async (req: Request, res: Response) => {
   const supabase = supabaseFromReq(req);
   const body = req.body;

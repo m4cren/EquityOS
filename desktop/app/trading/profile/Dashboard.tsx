@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useMemo, useState } from "react";
 import InitializeAccount from "./performance/_components/InitializeAccount";
+import { TradingAccountTypes } from "@/lib/types";
 
 const dashboardIconMap: Record<string, LucideIcon> = {
   Equity: LayoutDashboard,
@@ -76,10 +77,12 @@ const Dashboard = () => {
 
     if (isDuplicate) return;
 
-    const newAccount = {
+    const newAccount: TradingAccountTypes = {
       acc_name: trimmedName,
       base_equity: parsedBalance,
       equity: parsedBalance,
+      equity_month_start: parsedBalance,
+      equity_month: "",
       is_funded: formData.is_funded,
     };
 
@@ -93,7 +96,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <div className="w-full lg:w-[20vw] lg:min-w-[260px] h-fit rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-xl">
+      <div className="w-full  h-fit rounded-2xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-xl">
         <div className="mb-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/35">
             Dashboard

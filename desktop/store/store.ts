@@ -12,6 +12,8 @@ import todayNetworthReducer from "./netWorth/totalNetTodaySlice";
 import tradeHistoryReducer from "./tradeHistory/slice";
 import tradeAccountReducer from "./tradeAccount/slice";
 import tradingSystemReducer from "./tradingSystem/slice";
+import tradingEquityReducer from "./tradingEquitySlice/slice";
+import tradingLevelReducer from "./tradeLevel/slice";
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +30,8 @@ export const store = configureStore({
     tradeHistory: tradeHistoryReducer,
     tradeAccount: tradeAccountReducer,
     tradingSystem: tradingSystemReducer,
+    tradingEquity: tradingEquityReducer,
+    tradingLevel: tradingLevelReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

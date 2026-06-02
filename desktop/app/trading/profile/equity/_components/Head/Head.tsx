@@ -18,10 +18,12 @@ const Head = () => {
     );
   }
 
-  const { equity, base_equity } = selectedAccount;
+  const { equity, equity_month_start } = selectedAccount;
+
+  const monthlyBase = equity_month_start || equity;
 
   const value = Number(
-    (((equity - base_equity) / base_equity) * 100).toFixed(2)
+    (((equity - monthlyBase) / monthlyBase) * 100).toFixed(2)
   );
   const max = 25;
 
@@ -49,13 +51,15 @@ const Head = () => {
           }`}
         >
           {isPositive ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
-          {Math.abs(value)}%
+          {Math.abs(value)}% {isPositive ? "up" : "down"} this month
         </span>
       </div>
 
       {/* CENTER */}
       <div className="flex flex-col gap-2">
-        <p className="text-xs text-white/50 font-medium">Performance Range</p>
+        <p className="text-xs text-white/50 font-medium">
+          Performance Range (This Month)
+        </p>
 
         <div className="flex items-center gap-2">
           <p className="text-[0.7rem] font-semibold text-red-400">-25%</p>
@@ -80,12 +84,6 @@ const Head = () => {
           <p className="text-[0.7rem] font-semibold text-green-400">+25%</p>
         </div>
       </div>
-
-      {/* RIGHT */}
-      <button className="flex items-center gap-2 bg-white/5 hover:bg-white/10 transition px-4 py-2 rounded-lg text-sm font-medium border border-white/10">
-        This Month
-        <ChevronDown size={16} />
-      </button>
     </div>
   );
 };

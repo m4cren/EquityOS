@@ -13,7 +13,7 @@ const initialState: TradeAcountStateTypes = {
   tradeAccount: [],
   selectedTradeAcc: "",
   isPending: true,
-  errMsg: null as string | null,
+  errMsg: null,
 };
 
 const tradeAccountSlice = createSlice({
@@ -29,13 +29,25 @@ const tradeAccountSlice = createSlice({
       .addCase(
         fetchTradingAccount.fulfilled,
         (state, action: PayloadAction<TradingAccountTypes[]>) => {
+          const accounts = action.payload ?? [];
+
           state.isPending = false;
-          state.tradeAccount = action.payload;
-          state.selectedTradeAcc = action.payload[0].acc_name;
+          state.errMsg = null;
+          state.tradeAccount = accounts;
+
+          state.selectedTradeAcc = accounts[0]?.acc_name ?? "";
         }
       )
       .addCase(fetchTradingAccount.pending, (state) => {
         state.isPending = true;
+        state.errMsg = null;
+      })
+      .addCase(fetchTradingAccount.rejected, (state, action) => {
+        state.isPending = false;
+        state.tradeAccount = [];
+        state.selectedTradeAcc = "";
+        state.errMsg =
+          action.error.message ?? "Failed to fetch trading accounts";
       });
   },
 });
