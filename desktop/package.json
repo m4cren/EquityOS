@@ -3,10 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 6969",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start -p 6969",
+    "lint": "eslint",
+    "server": "cd ../server && pnpm start",
+    "electron": "wait-on http://localhost:6969 && electron electron/main.js",
+    "desktop": "concurrently \"pnpm run server\" \"pnpm run dev\" \"pnpm run electron\""
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
@@ -30,9 +33,12 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "concurrently": "^10.0.3",
+    "electron": "^42.3.2",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.10"
   }
 }

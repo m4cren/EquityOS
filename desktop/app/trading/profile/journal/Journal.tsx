@@ -495,7 +495,7 @@ const Journal = () => {
                 })}
               >
                 {totalR >= 0 ? "+" : ""}
-                {totalR}R
+                {totalR.toFixed(2)}R
               </p>
             </div>
 

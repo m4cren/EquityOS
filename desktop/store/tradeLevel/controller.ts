@@ -9,7 +9,7 @@ export const fetchTradeLevel = createAsyncThunk<number>(
       endpoint: "/trading/fetch-trade-level",
       method: "GET",
     });
-    console.log(data);
+
     return data || 0;
   }
 );

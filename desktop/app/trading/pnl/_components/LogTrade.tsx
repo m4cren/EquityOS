@@ -42,7 +42,7 @@ const getTradeXpReward = ({
   const hasReview = !!postNotes.trim();
   const hasPostImage = !!postSetupImg;
 
-  let xp = 70; // base XP for closing a valid trade
+  let xp = 10; // base XP for closing a valid trade
 
   if (setupGrade === "A+") xp += 25;
   if (isProfitable) xp += 20;
@@ -188,7 +188,9 @@ export default function LogTrade({
   const [postImgInput, setPostImgInput] = useState(
     existingTrade?.postSetupImg || ""
   );
-
+  const [draftCloseTime, setDraftCloseTime] = useState(
+    existingTrade?.closeTime || getNowLocalDateTime()
+  );
   const selectedCriteriaIds = useMemo(() => {
     return new Set(trade.setupCriteria.map((item) => item.id));
   }, [trade.setupCriteria]);
@@ -223,9 +225,11 @@ export default function LogTrade({
   const tradeStatus = isClosedTrade ? "Recorded" : "Open";
   const tradeDuration = getTradeDuration(trade.openTime, trade.closeTime);
 
-  const effectiveCloseTime =
-    trade.closeTime || (shouldShowCloseSection ? getNowLocalDateTime() : null);
-
+  const effectiveCloseTime = isClosedTrade
+    ? trade.closeTime
+    : shouldShowCloseSection
+    ? draftCloseTime
+    : null;
   const isCriterionChecked = (criterionId: string) => {
     return selectedCriteriaIds.has(criterionId);
   };
@@ -382,7 +386,7 @@ export default function LogTrade({
     }
 
     if (shouldShowCloseSection) {
-      const closeTimeToUse = trade.closeTime || effectiveCloseTime;
+      const closeTimeToUse = draftCloseTime;
 
       if (!closeTimeToUse) {
         nextErrors.push("Closing time is required to close the trade.");
@@ -449,9 +453,7 @@ export default function LogTrade({
 
     const payload = {
       ...trade,
-      closeTime: shouldShowCloseSection
-        ? trade.closeTime || effectiveCloseTime
-        : trade.closeTime,
+      closeTime: shouldShowCloseSection ? draftCloseTime : trade.closeTime,
       tierSetup: setupGrade,
     };
 
@@ -975,7 +977,7 @@ export default function LogTrade({
                     const date = e.target.value;
                     const time =
                       effectiveCloseTime?.split("T")[1]?.slice(0, 5) || "00:00";
-                    handleInputChange("closeTime", `${date}T${time}`);
+                    setDraftCloseTime(`${date}T${time}`);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-4 pr-4 outline-none"
                 />
@@ -990,7 +992,7 @@ export default function LogTrade({
                     const date =
                       effectiveCloseTime?.split("T")[0] ||
                       trade.openTime.split("T")[0];
-                    handleInputChange("closeTime", `${date}T${time}`);
+                    setDraftCloseTime(`${date}T${time}`);
                   }}
                   className="w-full rounded-lg border border-white/10 bg-white/5 py-3 pl-4 pr-4 outline-none"
                 />

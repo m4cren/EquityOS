@@ -38,11 +38,12 @@ export const closeTrade = createAsyncThunk(
 
     if (!trade) return;
 
-    await api<void, typeof trade>({
+    const res = await api<void, typeof trade>({
       endpoint: "/trading/close-trade",
       method: "PATCH",
       body: trade,
     });
+    console.log(res);
     return await dispatch(fetchTradeData()).unwrap();
   }
 );

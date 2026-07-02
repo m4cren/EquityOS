@@ -50,7 +50,7 @@ const Accounts = () => {
     const sortedNetWorth = sort(netWorth).desc((t) =>
       new Date(t.date_str).getTime()
     );
-    console.log(totalNetWorthThisDay);
+
     if (!sortedNetWorth[0] || totalNetWorthThisDay === 0) return;
     if (formattedDate === sortedNetWorth[0].date_str) {
     } else {
